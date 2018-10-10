@@ -1,0 +1,5 @@
+ <library path="lib/libtm_planner_lib">
+  <class name="tm_planner/TMPlanner" type="tm_planner::TMPlanner" base_class_type="nav_core::BaseGlobalPlanner">
+    <description>This is a move_base planner plugin by Tixiao Shan.</description>
+  </class>
+ </library>

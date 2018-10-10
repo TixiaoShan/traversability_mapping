@@ -1,0 +1,29 @@
+<launch>
+    
+    <!--- Sim Time -->
+    <param name="/use_sim_time" value="true" />
+
+    <!--- TF -->
+    <node pkg="tf" type="static_transform_publisher" name="velodyne_base_link" args="0 0 0 0 0 0 /base_link /velodyne 10" />
+    <node pkg="tf" type="static_transform_publisher" name="camera_init_to_map" args="0 0 0 1.570795 0 1.570795 /map /camera_init 10" />
+    <node pkg="tf" type="static_transform_publisher" name="base_link_to_camera" args="0 0 0 -1.570795 -1.570795 0 /camera /base_link 10" />
+
+    <!--- Lidar Odometry -->    
+    <node pkg="lego_loam" type="imageProjection"    name="imageProjection"    output="screen"/>
+    <node pkg="lego_loam" type="featureAssociation" name="featureAssociation" output="screen"/>
+    <node pkg="lego_loam" type="mapOptmization"     name="mapOptmization"     output="screen"/>
+    <node pkg="lego_loam" type="transformFusion"    name="transformFusion"    output="screen"/>
+
+    <!--- Run Rviz (launch-prefix="nice" for lower cpu usage)-->
+    <node pkg="rviz" type="rviz" name="rviz" output="log" args="-d $(find traversability_mapping)/launch/include/traversability_mapping.rviz" />
+    
+    <!--- Run Traversability Mapping -->    
+    <node pkg="traversability_mapping" type="traversability_filter"  name="traversability_filter"  output="screen"/>
+    <node pkg="traversability_mapping" type="traversability_map"     name="traversability_map"     output="screen"/>
+    <node pkg="traversability_mapping" type="traversability_prm"     name="traversability_prm"     output="screen"/>
+    <!--<node pkg="traversability_mapping" type="traversability_goal"    name="traversability_goal"    output="screen"/>-->
+
+    <!--- Run Move Base -->
+    <include file="$(find traversability_mapping)/launch/include/move_base.launch" />
+
+</launch>

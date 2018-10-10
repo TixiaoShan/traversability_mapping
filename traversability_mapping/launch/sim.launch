@@ -1,0 +1,31 @@
+<launch>
+    
+    <!--- Sim Time -->
+    <param name="/use_sim_time" value="true" />
+
+    <!--- Run Rviz (launch-prefix="nice" for lower cpu usage)-->
+    <node pkg="rviz" type="rviz" name="rviz" output="log" args="-d $(find traversability_mapping)/launch/include/traversability_mapping.rviz" />
+    
+    <!--- Run Traversability Mapping -->    
+    <node pkg="traversability_mapping" type="traversability_filter"  name="traversability_filter"  output="screen"/>
+    <node pkg="traversability_mapping" type="traversability_map"     name="traversability_map"     output="screen"/>
+    <node pkg="traversability_mapping" type="traversability_prm"     name="traversability_prm"     output="screen"/>
+    <node pkg="traversability_mapping" type="traversability_goal"    name="traversability_goal"    output="screen"/>
+
+    <!--- Run Move Base -->
+    <include file="$(find traversability_mapping)/launch/include/move_base.launch" />
+
+    <!--- Run Planner Costmap -->
+    <include file="$(find traversability_mapping)/launch/include/planner_costmap.launch" />
+
+    <!-- Bag file -->
+    <node pkg="rosbag" type="play" name="player" output="screen" launch-prefix="xterm -e" args="$(find tf_test)/bags/terrain.bag --clock -r 10"/>
+    <!-- City Bag File list -->
+    <!-- city_0.1mstep_ground_truth.bag>-->
+    <!-- city_0.2mstep_0.5hz_20r.bag -->
+    <!-- city_0.5mstep_0.5hz_20r.bag -->
+    <!-- city_1.0mstep_0.5hz_20r.bag -->
+
+    <!-- launch-prefix="xterm -e"  -->
+
+</launch>

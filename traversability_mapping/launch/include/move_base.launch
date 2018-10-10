@@ -1,0 +1,30 @@
+<launch>
+
+  <env name="ROSCONSOLE_CONFIG_FILE" value="$(find traversability_mapping)/launch/include/rosconsole/rosconsole_warn.conf"/>
+
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen"><!--launch-prefix="xterm -e">-->
+
+    <rosparam file="$(find traversability_mapping)/launch/params/move_base/costmap_common_params.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find traversability_mapping)/launch/params/move_base/costmap_common_params.yaml" command="load" ns="local_costmap" />
+    
+    <rosparam file="$(find traversability_mapping)/launch/params/move_base/map_nav_params/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find traversability_mapping)/launch/params/move_base/map_nav_params/global_costmap_params.yaml" command="load" />
+    
+    <rosparam file="$(find traversability_mapping)/launch/params/move_base/dwa_local_planner_params.yaml" command="load" />
+    <rosparam file="$(find traversability_mapping)/launch/params/move_base/base_local_planner_params.yaml" command="load" />
+    <rosparam file="$(find traversability_mapping)/launch/params/move_base/move_base_params.yaml" command="load" />
+    
+    <param name="base_global_planner" type="string" value="tm_planner/TMPlanner" />
+    <param name="base_local_planner" value="base_local_planner/TrajectoryPlannerROS"/>
+    <!--<param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS"/>-->
+    
+    <remap from="odom" to="odometry/filtered" />
+
+  </node>
+
+  <!-- Twist Interactive Marker for Controlling Robot -->
+  <!--<node pkg="interactive_marker_twist_server" type="marker_server" name="twist_marker_server">
+    <remap from="twist_marker_server/cmd_vel" to="/cmd_vel" />
+  </node>-->
+
+</launch>
