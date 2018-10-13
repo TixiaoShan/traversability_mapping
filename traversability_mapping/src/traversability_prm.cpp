@@ -111,7 +111,7 @@ public:
 
     void updateCostMap(){
         int sizeMap = elevationMap.occupancy.data.size();
-        int inflationSize = int(inflationRadius / elevationMap.occupancy.info.resolution);
+        int inflationSize = int(costmapInflationRadius / elevationMap.occupancy.info.resolution);
         for (int i = 0; i < sizeMap; ++i) {
             int idX = int(i % elevationMap.occupancy.info.width);
             int idY = int(i / elevationMap.occupancy.info.width);
@@ -450,10 +450,6 @@ public:
             }
 
             // costs propagation
-            if (costUpdateFlag[0])
-                edgeCosts[0] = edgeCosts[0] + closeToObstacle(indexInLocalMap); // close to obstacle cost (will be deleted)
-            if (costUpdateFlag[1])
-                edgeCosts[1] = edgeCosts[1] + terrainRoughness(rounded_x, rounded_y); // terrain roughness cost (will be deleted)
             if (costUpdateFlag[2])
                 edgeCosts[2] = edgeCosts[2] + mapResolution; // distance cost
         }
@@ -472,46 +468,6 @@ public:
         if (elevationMap.height[index] == -FLT_MAX)
             return true;
         return false;
-    }
-    // cost: Obstacle cost for edgePropagation
-    float closeToObstacle(int index){
-        if (elevationMap.costMap[index] > 0)
-            return elevationMap.costMap[index];
-        else
-            return 0;
-    }
-    // cost: terrain roughness cost for edgePropagation
-    float terrainRoughness(int rounded_x, int rounded_y){
-        float heightMin = FLT_MAX;
-        float heightMax = -FLT_MAX;
-        float height, heightDiff;
-
-        int neighbor_x, neighbor_y;
-
-        for (int i = -1; i <= 1; ++i){
-            for (int j = -1; j <= 1; ++j){
-                if (i == 0 && j == 0)
-                    continue;
-                neighbor_x = rounded_x + i;
-                neighbor_y = rounded_y + j;
-                // neighbor grid is outside local map
-                if (neighbor_x < 0 || neighbor_x >= localMapArrayLength ||
-                    neighbor_y < 0 || neighbor_y >= localMapArrayLength )
-                    continue;
-                // invalid height info
-                height = elevationMap.height[neighbor_x + neighbor_y * elevationMap.occupancy.info.width];
-                if (height == -FLT_MAX)
-                    continue;
-                //
-                heightMin = std::min(heightMin, height);
-                heightMax = std::max(heightMax, height);
-            }
-        }
-        heightDiff = abs(heightMax - heightMin);
-
-        if (heightDiff >= FLT_MAX || heightDiff < terrainRoughnessThreshold)
-            return 0;
-        return heightDiff;
     }
 
     void getNearStates(state_t *stateIn, vector<state_t*>& vectorNearStatesOut, double radius){
@@ -672,7 +628,7 @@ public:
             markerNode.color.a = 1;
 
             for (int i = 0; i < nodeList.size(); ++i){
-                if (distance(nodeList[i]->x, robotState->x) >= _visualizationRadius)
+                if (distance(nodeList[i]->x, robotState->x) >= visualizationRadius)
                     continue;
                 p.x = nodeList[i]->x[0];
                 p.y = nodeList[i]->x[1];
@@ -693,7 +649,7 @@ public:
             markerEdge.color.a = 1;
 
             for (int i = 0; i < nodeList.size(); ++i){
-                if (distance(nodeList[i]->x, robotState->x) >= _visualizationRadius)
+                if (distance(nodeList[i]->x, robotState->x) >= visualizationRadius)
                     continue;
                 int numNeighbors = nodeList[i]->neighborList.size();
                 for (int j = 0; j < numNeighbors; ++j){

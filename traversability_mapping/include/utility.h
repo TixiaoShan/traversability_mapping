@@ -69,62 +69,59 @@ typedef pcl::PointXYZI  PointType;
 typedef struct kdtree kdtree_t;
 typedef struct kdres kdres_t;
 
-/*
-    Prediction Settings
-    */
-extern const bool _makeElevationPredictionFlag = true;
-extern const bool _makeTraversabilityPredictionFlag = false;
-extern const float _predictionKernalSize = 0.3; // predict elevation within x meters
+// VLP-16
+extern const int N_SCAN = 16;
+extern const int Horizon_SCAN = 1800;
 
-/*
-    Mapping Configuration
-    */
+// Map Params
 extern const float mapResolution = 0.1; // map resolution
 extern const float mapCubeLength = 1.0; // the length of a sub-map (meters)
 extern const int mapCubeArrayLength = mapCubeLength / mapResolution; // the grid dimension of a sub-map (mapCubeLength / mapResolution)
 extern const int mapArrayLength = 2000 / mapCubeLength; // the sub-map dimension of global map (2000m x 2000m)
 extern const int rootCubeIndex = mapArrayLength / 2; // by default, robot is at the center of global map at the beginning
-/*
-    Mapping 2D Publish Configuration
-    */
+
+// Filter Params
+extern const int maxScanCheckNum = 10;
+extern const float sensorRangeLimit = 12;
+extern const float filterHeightLimit = 0.05; // sstep diff threshold 
+extern const float filterAngleLimit = 20; // slope angle threshold           >>>>>>>>----------------------------<<<<<<<<
+extern const int filterHeightMapArrayLength = sensorRangeLimit*2 / mapResolution;
+
+// BGK Prediction Params
+extern const bool predictionEnableFlag = true;
+extern const float predictionKernalSize = 0.2; // predict elevation within x meters
+
+// Occupancy Params
+extern const float p_occupied_when_laser = 0.8;
+extern const float p_occupied_when_no_laser = 0.3;
+extern const float large_log_odds = 100;
+extern const float max_log_odds_for_belief = 20;
+
+// 2D Map Publish Params
 extern const int localMapLength = 20; // length of the local occupancy grid map (meter)
 extern const int localMapArrayLength = localMapLength / mapResolution;
-/*
-    Robot Settings
-    */
+
+// Visualization Params
+extern const float visualizationRadius = 100;
+
+// Robot Params
 extern const float robotRadius = 0.2;
 extern const float _sensorHeight = 0.5;
 extern const int footprintRadiusLength = int(robotRadius / mapResolution);
 extern const float _slopeAngleThreshold = 20; // slope angle threshold
 extern const float _stepHeightThreshold = 0.1;
 
-/*
-    Filter Settings
-    */
-extern const float _rangeLimit = 12; // point that has range within this value to robot is sent to mapping
-extern const int _filterHeightMapArrayLength = _rangeLimit*2 / mapResolution;
-/*
-    Visualization Settings
-    */
-extern const int _visualizationRadius = 100;
-extern const float _visualizationDownSampleResolution = 0.2;
-/*
-    Planner Settings
-    */
+// Planning Cost Params
 extern const int NUM_COSTS = 3;
 extern const int tmp[] = {2};
 extern const std::vector<int> costHierarchy(tmp, tmp+sizeof(tmp)/sizeof(int));// c++11 initialization: costHierarchy{0, 1, 2}
-extern const float terrainRoughnessThreshold = 0.1;
+
 // PRM Planner Settings
-extern const float inflationRadius = 0.3;
-extern const float neighborSampleRadius  = 0.5; // 7.5 or 10
-extern const float neighborConnectHeight = 1.0;//mapResolution * 3;
-extern const float neighborConnectRadius = 2.0; // 15 or 20
+extern const float costmapInflationRadius = 0.3;
+extern const float neighborSampleRadius  = 0.8;
+extern const float neighborConnectHeight = 1.0;
+extern const float neighborConnectRadius = 2.0;
 extern const float neighborSearchRadius = localMapLength / 2;
-
-
-
-
 
 struct grid_t;
 struct mapCell_t;
@@ -157,81 +154,37 @@ struct mapCell_t{
 
     grid_t grid;
 
-    int times;
+    float log_odds;
+
+    int observeTimes;
     
-    float occupancy;
-    float elevation;
-
-    float occupancyVar;
-    float elevationVar;
-
-    float alphaOccu, betaOccu; // hyperparameters for occupancy of this cell
-    float alphaElev, betaElev; // hyperparameters for elevation of this cell
-
-    bool observingFlag;
-
-    bool observedNonTraversableFlag; // non-traversable decided by cloud filter
-
-    
-
+    float occupancy, occupancyVar;
+    float elevation, elevationVar;
 
     mapCell_t(){
 
-        times = 0;
+        log_odds = 0.5;
+        observeTimes = 0;
+
+        elevation = -FLT_MAX;
+        elevationVar = 1e3;
 
         occupancy = 0; // initialized as unkown
-        elevation = -FLT_MAX;
-
-        occupancyVar = 0;
-        elevationVar = 0;
-
-        // initial priors
-        alphaOccu = 0; betaOccu = 1e-6;
-        alphaElev = 0; betaElev = 1e-6;
-        
-        observingFlag = false;
-        
-        observedNonTraversableFlag = false;
-
+        occupancyVar = 1e3;
     }
 
     void updatePoint(){
         xyz->z = elevation;
         xyz->intensity = occupancy;
     }
-
-    void updateElevation(float elevIn){
+    void updateElevation(float elevIn, float varIn){
         elevation = elevIn;
+        elevationVar = varIn;
         updatePoint();
     }
     void updateOccupancy(float occupIn){
         occupancy = occupIn;
         updatePoint();
-    }
-    // Elevation updates for incoming point cloud
-    void updateElevationAlphaBeta(float height){
-        alphaElev += height;
-        betaElev  += 1 - height;
-        height = alphaElev / (alphaElev + betaElev);
-        updateElevation(height);
-    }
-    void updateElevationAlphaBeta(float alpha, float beta, float height){
-        alphaElev = alpha;
-        betaElev  = beta;
-        updateElevation(height);
-    }
-    // Traversability updates for incoming point cloud
-    void updateTraversabilityAlphaBeta(float occup){
-        if (occup == -1) return;// -1 from traversability_filter
-        alphaOccu += occup;
-        betaOccu  += 1 - occup;
-        occup = alphaOccu / (alphaOccu + betaOccu);
-        updateOccupancy(occup);
-    }
-    void updateTraversabilityAlphaBeta(float alpha, float beta, float occup){
-        alphaOccu = alpha;
-        betaOccu  = beta;
-        updateOccupancy(occup);
     }
 };
 
@@ -250,9 +203,6 @@ struct childMap_t{
     float originX; // sub-map's x root coordinate
     float originY; // sub-map's y root coordinate
     pcl::PointCloud<PointType> cloud;
-
-    Eigen::MatrixXf Ks;
-    Eigen::MatrixXf kbar;
 
     childMap_t(int id, int indx, int indy){
 
@@ -298,64 +248,6 @@ struct childMap_t{
                 cellArray[i][j]->grid.gridIndex = index;
             }
         }
-    }
-
-    vector<float> xTrain; // coordinates (x,y) for training data
-    vector<float> yTrain; // elevation for training data
-    vector<float> yTrain2; // traversability for training data
-    vector<float> xTest; // coordinates (x,y) for testing data
-    vector<mapCell_t*> trainList; // pointer to the cell of training data
-    vector<mapCell_t*> testList; // pointer to the cell of testing data
-
-    void findTrainingData(std::string inferType){
-        if (inferType == "elevation"){
-            if (xTrain.size() != 0 || yTrain.size() != 0)
-                return;
-            // elevation training data
-            for (int i = 0; i < mapCubeArrayLength; ++i){
-                for (int j = 0; j < mapCubeArrayLength; ++j){
-                    if (cellArray[i][j]->observingFlag == true){
-                        xTrain.push_back(cellArray[i][j]->xyz->x);
-                        xTrain.push_back(cellArray[i][j]->xyz->y);
-                        yTrain.push_back(cellArray[i][j]->elevation);
-                        trainList.push_back(cellArray[i][j]);
-                    }
-                }
-            }
-        }
-        if (inferType == "traversability"){
-            if (yTrain2.size() != 0)
-                return;
-            // traversability training data
-            int listSize = trainList.size();
-            for (int i = 0; i < listSize; ++i){
-                yTrain2.push_back(trainList[i]->occupancy);
-            }
-        }
-    }
-
-    void findTestingData(){
-        if (xTest.size() != 0 || testList.size() != 0)
-            return;
-        // testing data
-        for (int i = 0; i < mapCubeArrayLength; ++i){
-            for (int j = 0; j < mapCubeArrayLength; ++j){
-                if (cellArray[i][j]->observingFlag == false){
-                    xTest.push_back(cellArray[i][j]->xyz->x);
-                    xTest.push_back(cellArray[i][j]->xyz->y);
-                    testList.push_back(cellArray[i][j]);
-                }
-            }
-        }
-    }
-
-    void clearInferenceData(){
-        xTrain.clear();
-        yTrain.clear();
-        yTrain2.clear();
-        xTest.clear();
-        trainList.clear();
-        testList.clear();
     }
 };
 
@@ -434,6 +326,8 @@ bool isStateExsiting(neighbor_t neighborIn){
     return neighborIn.neighbor == compareState ? true : false;
 }
 
-
+float pointDistance(PointType p1, PointType p2){
+    return sqrt((p1.x-p2.x)*(p1.x-p2.x) + (p1.y-p2.y)*(p1.y-p2.y) + (p1.z-p2.z)*(p1.z-p2.z));
+}
 
 #endif

@@ -4,8 +4,6 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /Global Options1
-        - /Elevation Cloud1
         - /PRM Path1/Namespaces1
       Splitter Ratio: 0.588888884
     Tree Height: 843
@@ -26,26 +24,12 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: Filtered Cloud
+    SyncSource: Elevation Cloud
   - Class: rviz/Help
     Name: Help
 Visualization Manager:
   Class: ""
   Displays:
-    - Class: rviz/TF
-      Enabled: false
-      Frame Timeout: 15
-      Frames:
-        All Enabled: false
-      Marker Scale: 10
-      Name: TF
-      Show Arrows: true
-      Show Axes: true
-      Show Names: true
-      Tree:
-        {}
-      Update Interval: 0
-      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -90,43 +74,41 @@ Visualization Manager:
       Radius: 0.200000003
       Reference Frame: base_link
       Value: true
-    - Class: rviz/InteractiveMarkers
-      Enable Transparency: true
-      Enabled: false
-      Name: Goal Flag
-      Show Axes: false
-      Show Descriptions: false
-      Show Visual Aids: false
-      Update Topic: /traversability_goal/update
-      Value: false
-    - Alpha: 1
-      Buffer Length: 1
-      Class: rviz/Path
-      Color: 255; 85; 255
-      Enabled: true
-      Head Diameter: 0.300000012
-      Head Length: 0.200000003
-      Length: 0.300000012
-      Line Style: Billboards
-      Line Width: 0.100000001
-      Name: Twist Command
-      Offset:
-        X: 0
-        Y: 0
-        Z: 0
-      Pose Color: 255; 85; 255
-      Pose Style: None
-      Radius: 0.0299999993
-      Shaft Diameter: 0.100000001
-      Shaft Length: 0.100000001
-      Topic: /twist_command
-      Unreliable: false
-      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 32.8500023
-        Min Value: 9.85000038
+        Max Value: 27.6198864
+        Min Value: -11.5489845
+        Value: true
+      Axis: X
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: Intensity
+      Decay Time: 0
+      Enabled: false
+      Invert Rainbow: false
+      Max Color: 255; 255; 0
+      Max Intensity: 100
+      Min Color: 85; 170; 255
+      Min Intensity: 0
+      Name: Filtered Cloud Final
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 4
+      Size (m): 0.100000001
+      Style: Points
+      Topic: /filtered_pointcloud
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: false
+      Value: false
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 41.2006912
+        Min Value: 19.0690956
         Value: true
       Axis: X
       Channel Name: intensity
@@ -137,17 +119,17 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 0
-      Max Intensity: 1
+      Max Intensity: 100
       Min Color: 85; 170; 255
-      Min Intensity: -1
-      Name: Filtered Cloud
+      Min Intensity: 0
+      Name: Filtered Cloud Visual
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
-      Size (Pixels): 8
+      Size (Pixels): 4
       Size (m): 0.100000001
       Style: Points
-      Topic: /filtered_pointcloud
+      Topic: /filtered_pointcloud_visual
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: false
@@ -155,8 +137,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: false
       Autocompute Value Bounds:
-        Max Value: 4.98178005
-        Min Value: -4.91480017
+        Max Value: 0.115081742
+        Min Value: -0.869673908
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -167,16 +149,16 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 0; 0
-      Max Intensity: 0.800000012
+      Max Intensity: 100
       Min Color: 255; 255; 255
-      Min Intensity: 0.5
+      Min Intensity: 60
       Name: Elevation Cloud
       Position Transformer: XYZ
       Queue Size: 0
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.25
-      Style: Squares
+      Size (m): 0.100000001
+      Style: Boxes
       Topic: /elevation_pointcloud
       Unreliable: false
       Use Fixed Frame: true
@@ -215,8 +197,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 23.3965931
-        Min Value: -4.48372602
+        Max Value: 23.2735062
+        Min Value: -3.67419147
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -230,72 +212,12 @@ Visualization Manager:
       Max Intensity: 15
       Min Color: 0; 0; 0
       Min Intensity: 0
-      Name: Full Cloud
+      Name: 3D Cloud
       Position Transformer: XYZ
       Queue Size: 0
       Selectable: true
-      Size (Pixels): 1
+      Size (Pixels): 3
       Size (m): 0.00999999978
-      Style: Points
-      Topic: /laser_cloud_surround
-      Unreliable: false
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: false
-    - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz/PointCloud2
-      Color: 255; 255; 127
-      Color Transformer: Intensity
-      Decay Time: 0
-      Enabled: false
-      Invert Rainbow: false
-      Max Color: 0; 0; 255
-      Max Intensity: 15
-      Min Color: 255; 255; 127
-      Min Intensity: 0
-      Name: ICP Frame
-      Position Transformer: XYZ
-      Queue Size: 0
-      Selectable: true
-      Size (Pixels): 5
-      Size (m): 0.100000001
-      Style: Points
-      Topic: /corrected_cloud
-      Unreliable: false
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: false
-    - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz/PointCloud2
-      Color: 255; 255; 255
-      Color Transformer: FlatColor
-      Decay Time: 0
-      Enabled: false
-      Invert Rainbow: false
-      Max Color: 255; 0; 0
-      Max Intensity: 15.1794996
-      Min Color: 255; 255; 255
-      Min Intensity: 0
-      Name: Recent Frames
-      Position Transformer: XYZ
-      Queue Size: 10
-      Selectable: true
-      Size (Pixels): 1
-      Size (m): 0.100000001
       Style: Points
       Topic: /recent_cloud
       Unreliable: false
@@ -311,43 +233,13 @@ Visualization Manager:
       Axis: Z
       Channel Name: intensity
       Class: rviz/PointCloud2
-      Color: 255; 255; 127
-      Color Transformer: FlatColor
-      Decay Time: 0
-      Enabled: false
-      Invert Rainbow: false
-      Max Color: 255; 0; 0
-      Max Intensity: 15.1794996
-      Min Color: 255; 255; 255
-      Min Intensity: 0
-      Name: History Frames
-      Position Transformer: XYZ
-      Queue Size: 10
-      Selectable: true
-      Size (Pixels): 1
-      Size (m): 0.100000001
-      Style: Points
-      Topic: /history_cloud
-      Unreliable: false
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: false
-    - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz/PointCloud2
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
       Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 0
+      Max Intensity: 155
       Min Color: 0; 0; 0
       Min Intensity: 0
       Name: Trajectory
@@ -363,73 +255,46 @@ Visualization Manager:
       Use rainbow: true
       Value: false
     - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz/PointCloud2
-      Color: 0; 0; 255
-      Color Transformer: FlatColor
-      Decay Time: 0
-      Enabled: false
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Max Intensity: 384
-      Min Color: 0; 0; 0
-      Min Intensity: 0
-      Name: PRM Path Cloud
-      Position Transformer: XYZ
-      Queue Size: 10
-      Selectable: true
-      Size (Pixels): 7
-      Size (m): 0.00999999978
-      Style: Points
-      Topic: /prm_cloud_path
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 255; 85; 255
+      Enabled: true
+      Head Diameter: 0.300000012
+      Head Length: 0.200000003
+      Length: 0.300000012
+      Line Style: Billboards
+      Line Width: 0.100000001
+      Name: Twist Command
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Radius: 0.0299999993
+      Shaft Diameter: 0.100000001
+      Shaft Length: 0.100000001
+      Topic: /twist_command
       Unreliable: false
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: false
-    - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: -0.0675333515
-        Min Value: -0.663922131
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz/PointCloud2
-      Color: 0; 0; 255
-      Color Transformer: AxisColor
-      Decay Time: 0
-      Enabled: false
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Max Intensity: 141
-      Min Color: 0; 0; 0
-      Min Intensity: 0
-      Name: PRM Node Cloud
-      Position Transformer: XYZ
-      Queue Size: 10
-      Selectable: true
-      Size (Pixels): 10
-      Size (m): 0.00999999978
-      Style: Points
-      Topic: /prm_cloud_nodes
-      Unreliable: false
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: false
+      Value: true
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /prm_path
       Name: PRM Path
       Namespaces:
-        {}
+        goal: true
+        path: true
       Queue Size: 100
       Value: true
+    - Class: rviz/InteractiveMarkers
+      Enable Transparency: true
+      Enabled: false
+      Name: Goal Flag
+      Show Axes: false
+      Show Descriptions: false
+      Show Visual Aids: false
+      Update Topic: /traversability_goal/update
+      Value: false
     - Class: rviz/MarkerArray
       Enabled: false
       Marker Topic: /prm_graph
@@ -445,6 +310,36 @@ Visualization Manager:
       Namespaces:
         {}
       Queue Size: 100
+      Value: false
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: FlatColor
+      Decay Time: 0
+      Enabled: false
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 83
+      Min Color: 0; 0; 0
+      Min Intensity: 0
+      Name: PointCloud2
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.00999999978
+      Style: Points
+      Topic: /velodyne_points
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
       Value: false
   Enabled: true
   Global Options:
@@ -466,7 +361,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 8.7690258
+      Distance: 21.8020554
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -481,10 +376,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.429797351
+      Pitch: 0.474797368
       Target Frame: base_link
       Value: Orbit (rviz)
-      Yaw: 3.06039619
+      Yaw: 2.56232285
     Saved: ~
 Window Geometry:
   Displays:

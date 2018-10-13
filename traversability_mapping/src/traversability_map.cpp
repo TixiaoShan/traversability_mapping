@@ -6,32 +6,25 @@ private:
 
     // ROS Node Handle
     ros::NodeHandle nh;
-
     // Mutex Memory Lock
     std::mutex mtx;
-
-    // Transform Listener (get robot position)
+    // Transform Listener
     tf::TransformListener listener;
     tf::StampedTransform transform;
-
     // Subscriber
     ros::Subscriber subFilteredGroundCloud;
-
     // Publisher
     ros::Publisher pubOccupancyMapLocal;
     ros::Publisher pubOccupancyMapLocalHeight;
     ros::Publisher pubElevationCloud;
-
     // Point Cloud Pointer
     pcl::PointCloud<PointType>::Ptr laserCloud; // save input filtered laser cloud for mapping
     pcl::PointCloud<PointType>::Ptr laserCloudElevation; // a cloud for publishing elevation map
-
     // Occupancy Grid Map
     nav_msgs::OccupancyGrid occupancyMap2D; // local occupancy grid map
     elevation_msgs::OccupancyElevation occupancyMap2DHeight; // customized message that includes occupancy map and elevation info
 
     int pubCount;
-    pcl::VoxelGrid<PointType> downSizeFilter;
     
     // Map Arrays
     int mapArrayCount;
@@ -100,20 +93,17 @@ public:
         matEig = cv::Mat (1, 3, CV_32F, cv::Scalar::all(0));
         matVec = cv::Mat (3, 3, CV_32F, cv::Scalar::all(0));
 
-        downSizeFilter.setLeafSize(_visualizationDownSampleResolution, _visualizationDownSampleResolution, _visualizationDownSampleResolution);
-
         initializeLocalOccupancyMap();
     }
 
-    void resetParams(){
-        newScanList2 = newScanList;
-        newScanList.clear();
-    }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////// Mapping /////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void cloudHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudMsg){
+
+        if (getRobotPosition() == false) // Get Robot Position
+            return;
 
         // Convert Point Cloud
         pcl::fromROSMsg(*laserCloudMsg, *laserCloud);
@@ -125,9 +115,6 @@ public:
 
         // publish local occupancy grid map
         publishMap();
-
-        // Reset for New Scan
-        resetParams();
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////// Register Cloud /////////////////////////////////////////////////////
@@ -141,22 +128,75 @@ public:
         }
     }
 
-    bool updateElevationMap(PointType *point){
+    void updateElevationMap(PointType *point){
         // Find point index in global map
         grid_t thisGrid;
-        if (findPointGridInMap(&thisGrid, point) == false) return false;
+        if (findPointGridInMap(&thisGrid, point) == false) return;
         // Get current cell pointer
         mapCell_t *thisCell = grid2Cell(&thisGrid);
-        // Save new scan (for passing to prediction thread)
-        newScanList.push_back(thisCell);
-        // register elevation
-        thisCell->updateElevationAlphaBeta(point->z);
-        // register traversability
-        thisCell->updateTraversabilityAlphaBeta(point->intensity);
- 
-        thisCell->observedNonTraversableFlag = (point->intensity == 1) ? true : false;
-        
-        return true;
+        // update elevation
+        updateCellElevation(thisCell, point);
+        // update occupancy
+        updateCellOccupancy(thisCell, point);
+        // update observation time
+        updateCellObservationTime(thisCell);
+    }
+
+    void updateCellObservationTime(mapCell_t *thisCell){
+        ++thisCell->observeTimes;
+        if (thisCell->observeTimes >= 10){
+            // push to a list
+            thisCell->observeTimes = 0;
+        }
+    }
+
+    void updateCellOccupancy(mapCell_t *thisCell, PointType *point){
+        // Update log_odds
+        float p;  // Probability of being occupied knowing current measurement.
+        if (point->intensity == 100)
+            p = p_occupied_when_laser;
+        else
+            p = p_occupied_when_no_laser;
+        thisCell->log_odds += std::log(p / (1 - p));
+
+        if (thisCell->log_odds < -large_log_odds)
+            thisCell->log_odds = -large_log_odds;
+        else if (thisCell->log_odds > large_log_odds)
+            thisCell->log_odds = large_log_odds;
+        // Update occupancy
+        float occupancy;
+        if (thisCell->log_odds < -max_log_odds_for_belief)
+            occupancy = 0;
+        else if (thisCell->log_odds > max_log_odds_for_belief)
+            occupancy = 100;
+        else
+            occupancy = (int)(lround((1 - 1 / (1 + std::exp(thisCell->log_odds))) * 100));
+        // update cell
+        thisCell->updateOccupancy(occupancy);
+    }
+
+    void updateCellElevation(mapCell_t *thisCell, PointType *point){
+        // Kalman Filter: update cell elevation using Kalman filter
+        // https://www.cs.cornell.edu/courses/cs4758/2012sp/materials/MI63slides.pdf
+
+        // cell is observed for the first time, no need to use Kalman filter
+        if (thisCell->elevation == -FLT_MAX){
+            thisCell->elevation = point->z;
+            thisCell->elevationVar = pointDistance(robotPoint, *point) / 10;
+            return;
+        }
+
+        // Predict:
+        float x_pred = thisCell->elevation; // x = F * x + B * u
+        float P_pred = thisCell->elevationVar + 0.01; // P = F*P*F + Q
+        // Update:
+        float R = pointDistance(robotPoint, *point) / 10; // measurement noise: R
+        float K = P_pred / (P_pred + R);// Gain: K  = P * H^T * (HPH + R)^-1
+        float y = point->z; // measurement: y
+        float x_final = x_pred + K * (y - x_pred); // x_final = x_pred + K * (y - H * x_pred)
+        float P_final = (1 - K) * P_pred; // P_final = (I - K * H) * P_pred
+        // Update cell
+        thisCell->updateElevation(x_final, P_final);
     }
 
     mapCell_t* grid2Cell(grid_t *thisGrid){
@@ -203,363 +243,111 @@ public:
         if (point->y + mapCubeLength/2.0 < 0)  --*cubeY;
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////// Predict Map /////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    void BGK(){
-
-        ros::Rate rate(3); // Hz
-        
-        while (ros::ok()){
-
-            elevationMapPrediction(); // Predict Elevation Map
-
-            traversabilityMapCalculation();
-
-            traversabilityMapPrediction();
-
-            resetBGKParams();
-
-            rate.sleep();
-        }
-    }
-
-    void resetBGKParams(){
-
-        if (_makeElevationPredictionFlag == false)
-            return;
-
-        // reset observation list
-        int listSize = observingList.size();
-        for (int i = 0; i < listSize; ++i){
-            observingList[i]->observingFlag = false;
-            observingList[i]->observedNonTraversableFlag = false;
-        }
-        observingList.clear();
-
-        // clear elevetion prediction related data
-        for (int i = 0; i < mapArrayLength; ++i){
-            for (int j = 0; j < mapArrayLength; ++j){
-                predictionArrayFlag[i][j] = false;
-                if (mapArrayInd[i][j] != -1)
-                    mapArray[mapArrayInd[i][j]]->clearInferenceData();
-            }
-        }
-    }
-
-    void elevationMapPrediction(){
-
-        if (_makeElevationPredictionFlag == false)
-            return;
-
-        observingList = newScanList2;
-
-        // find the elevation prediction array
-        int listSize = observingList.size();
-        for (int i = 0; i < listSize; ++i){
-            // Mark new scan grids (they are used as new training data)
-            observingList[i]->observingFlag = true;
-
-            grid_t thisGrid = observingList[i]->grid;
-            predictionArrayFlag[thisGrid.cubeX][thisGrid.cubeY] = true;
-            predictionArrayFlag[thisGrid.cubeX-1][thisGrid.cubeY] = true;
-            predictionArrayFlag[thisGrid.cubeX+1][thisGrid.cubeY] = true;
-            predictionArrayFlag[thisGrid.cubeX][thisGrid.cubeY-1] = true;
-            predictionArrayFlag[thisGrid.cubeX][thisGrid.cubeY+1] = true;
-        }
-
-        for (int i = 0; i < mapArrayLength; ++i){
-            for (int j = 0; j < mapArrayLength; ++j){
-                // no need to predict
-                if (predictionArrayFlag[i][j] == false)
-                    continue;
-
-                // Sub-map (batch) not existing, create new one
-                if (mapArrayInd[i][j] == -1){
-                    childMap_t *thisChildMap = new childMap_t(mapArrayCount, i, j);
-                    mapArray.push_back(thisChildMap);
-                    mapArrayInd[i][j] = mapArrayCount;
-                    ++mapArrayCount;
-                }
-
-                // Training data
-                vector<float> xTrainVec;
-                vector<float> yTrainVec;
-
-                for (int k = -1; k <= 1; ++k){
-                    for (int l = -1; l <= 1; ++l){
-                        // skip four corners
-                        if (std::abs(k) + std::abs(l) == 2)
-                            continue;
-                        // Sub-map (batch) not existing
-                        if (i+k < 0 || i+k >= mapArrayLength || j+l < 0 || j+l >= mapArrayLength) continue;
-                        int mapInd = mapArrayInd[i+k][j+l];
-                        if (mapInd == -1) continue;
-                        // Find training data for this batch, and append
-                        mapArray[mapInd]->findTrainingData("elevation");
-                        xTrainVec.insert(std::end(xTrainVec), std::begin(mapArray[mapInd]->xTrain), std::end(mapArray[mapInd]->xTrain));
-                        yTrainVec.insert(std::end(yTrainVec), std::begin(mapArray[mapInd]->yTrain), std::end(mapArray[mapInd]->yTrain));
-                    }
-                }
-
-                if (xTrainVec.size() == 0 || yTrainVec.size() == 0)
-                    continue;
-
-                Eigen::MatrixXf xTrain = Eigen::Map<const Eigen::Matrix<float, -1, -1, Eigen::RowMajor>>(xTrainVec.data(), xTrainVec.size() / 2, 2);
-                Eigen::MatrixXf yTrain = Eigen::Map<const Eigen::Matrix<float, -1, -1, Eigen::RowMajor>>(yTrainVec.data(), yTrainVec.size(), 1);
-
-                // Testing data
-                int mapInd = mapArrayInd[i][j];
-                mapArray[mapInd]->findTestingData(); // Find testing data for this batch
-
-                vector<float> xTestVec = mapArray[mapInd]->xTest; // testing data vector
-                vector<mapCell_t*> testList = mapArray[mapInd]->testList; // testing data list
-
-                if (xTestVec.size() == 0)
-                    continue;
-
-                Eigen::MatrixXf xTest = Eigen::Map<const Eigen::Matrix<float, -1, -1, Eigen::RowMajor>>(xTestVec.data(), xTestVec.size() / 2, 2);
-
-                // Predict
-                Eigen::MatrixXf Ks; // covariance matrix
-                covSparse(xTest, xTrain, Ks); // sparse kernel
-
-                Eigen::MatrixXf ybar = (Ks * yTrain).array();
-                Eigen::MatrixXf kbar = Ks.rowwise().sum().array();
-
-                mapArray[mapInd]->Ks = Ks;
-                mapArray[mapInd]->kbar = kbar;
-
-                // Update Elevation with Prediction
-                for (int k = 0; k < testList.size(); ++k){
-
-                    if (std::isnan(ybar(k,0)) || std::isnan(kbar(k,0)))
-                        continue;
-
-                    if (ybar(k,0) == 0 && kbar(k,0) == 0) // too far away to training points, all zero
-                        continue;
-
-                    mapCell_t* thisCell = testList[k];
-
-                    float alphaElev = thisCell->alphaElev;
-                    float betaElev = thisCell->betaElev;
-                    alphaElev += ybar(k,0);
-                    betaElev  += kbar(k,0) - ybar(k,0);
-                    float elevation = alphaElev / (alphaElev + betaElev);
-
-                    if (!std::isnan(elevation))
-                        thisCell->updateElevationAlphaBeta(alphaElev, betaElev, elevation);
-                }
-            }
-        }
-    }
-
-
-
-    void dist(const Eigen::MatrixXf &xStar, const Eigen::MatrixXf &xTrain, Eigen::MatrixXf &d) const {
-        d = Eigen::MatrixXf::Zero(xStar.rows(), xTrain.rows());
-        for (int i = 0; i < xStar.rows(); ++i) {
-            d.row(i) = (xTrain.rowwise() - xStar.row(i)).rowwise().norm();
-        }
-    }
-
-    void covSparse(const Eigen::MatrixXf &xStar, const Eigen::MatrixXf &xTrain, Eigen::MatrixXf &Kxz) const {
-        dist(xStar/(_predictionKernalSize+0.1), xTrain/(_predictionKernalSize+0.1), Kxz);
-        Kxz = (((2.0f + (Kxz * 2.0f * 3.1415926f).array().cos()) * (1.0f - Kxz.array()) / 3.0f) +
-              (Kxz * 2.0f * 3.1415926f).array().sin() / (2.0f * 3.1415926f)).matrix() * 1.0f;
-        // Clean up for values with distance outside length scale, possible because Kxz <= 0 when dist >= _predictionKernalSize
-        for (int i = 0; i < Kxz.rows(); ++i)
-            for (int j = 0; j < Kxz.cols(); ++j)
-                if (Kxz(i,j) < 0) Kxz(i,j) = 0;
-    }
-
-    void covMaterniso3(const Eigen::MatrixXf &xStar, const Eigen::MatrixXf &xTrain, Eigen::MatrixXf &Kxz) const {
-        dist(1.73205 / (_predictionKernalSize+0.1) * xStar, 1.73205 / (_predictionKernalSize+0.1) * xTrain, Kxz);
-        Kxz = ((1 + Kxz.array()) * exp(-Kxz.array())).matrix() * 1.0f;
-    }
-
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////// Traversability Calculation ///////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    void traversabilityMapCalculation(){
+    // void traversabilityMapCalculation(){
 
-        if (_makeElevationPredictionFlag == false)
-            return;
+    //     // no new scan, return
+    //     if (observingList.size() == 0)
+    //         return;
 
-        // no new scan, return
-        if (observingList.size() == 0)
-            return;
+    //     int listSize = observingList.size();
 
-        int listSize = observingList.size();
+    //     for (int i = 0; i < listSize; ++i){
 
-        for (int i = 0; i < listSize; ++i){
+    //         mapCell_t *thisCell = observingList[i];
 
-            mapCell_t *thisCell = observingList[i];
-
-            // if grid non-traversable decided by traversability_filter
-            if (thisCell->observedNonTraversableFlag == true){
-                thisCell->updateTraversabilityAlphaBeta(1);
-                continue;
-            }
+    //         // if grid non-traversable decided by traversability_filter
+    //         if (thisCell->observedNonTraversableFlag == true){
+    //             thisCell->updateTraversabilityAlphaBeta(1);
+    //             continue;
+    //         }
             
-            vector<float> xyzVector = findNeighborElevations(thisCell);
+    //         vector<float> xyzVector = findNeighborElevations(thisCell);
 
-            if (xyzVector.size() <= 2)
-                continue;
+    //         if (xyzVector.size() <= 2)
+    //             continue;
 
-            Eigen::MatrixXf matPoints = Eigen::Map<const Eigen::Matrix<float, -1, -1, Eigen::RowMajor>>(xyzVector.data(), xyzVector.size() / 3, 3);
+    //         Eigen::MatrixXf matPoints = Eigen::Map<const Eigen::Matrix<float, -1, -1, Eigen::RowMajor>>(xyzVector.data(), xyzVector.size() / 3, 3);
 
-            // min and max elevation
-            float minElevation = matPoints.col(2).minCoeff();
-            float maxElevation = matPoints.col(2).maxCoeff();
-            float maxDifference = (maxElevation - minElevation) < 0.05 ? 0 : maxElevation - minElevation;
+    //         // min and max elevation
+    //         float minElevation = matPoints.col(2).minCoeff();
+    //         float maxElevation = matPoints.col(2).maxCoeff();
+    //         float maxDifference = (maxElevation - minElevation) < 0.05 ? 0 : maxElevation - minElevation;
 
-            // if (maxElevation - minElevation > _stepHeightThreshold){
-            //     thisCell->updateTraversabilityAlphaBeta(1);
-            //     continue;
-            // }
+    //         // if (maxElevation - minElevation > _stepHeightThreshold){
+    //         //     thisCell->updateTraversabilityAlphaBeta(1);
+    //         //     continue;
+    //         // }
 
-            // find maximum step
-            // float maximumStep = -FLT_MAX;
-            // for (int j = 0; j < matPoints.rows(); ++j){
-            //     for (int k = j+1; k < matPoints.rows(); ++k){
-            //         float thisStepDiff = std::abs(matPoints(j,2) - matPoints(k,2));
-            //         maximumStep = std::max(thisStepDiff, maximumStep);
-            //     }
-            // }
+    //         // find maximum step
+    //         // float maximumStep = -FLT_MAX;
+    //         // for (int j = 0; j < matPoints.rows(); ++j){
+    //         //     for (int k = j+1; k < matPoints.rows(); ++k){
+    //         //         float thisStepDiff = std::abs(matPoints(j,2) - matPoints(k,2));
+    //         //         maximumStep = std::max(thisStepDiff, maximumStep);
+    //         //     }
+    //         // }
 
-            Eigen::MatrixXf centered = matPoints.rowwise() - matPoints.colwise().mean();
-            Eigen::MatrixXf cov = (centered.adjoint() * centered);
-            cv::eigen2cv(cov, matCov); // copy data from eigen to cv::Mat
-            cv::eigen(matCov, matEig, matVec); // find eigenvalues and eigenvectors for the covariance matrix
+    //         Eigen::MatrixXf centered = matPoints.rowwise() - matPoints.colwise().mean();
+    //         Eigen::MatrixXf cov = (centered.adjoint() * centered);
+    //         cv::eigen2cv(cov, matCov); // copy data from eigen to cv::Mat
+    //         cv::eigen(matCov, matEig, matVec); // find eigenvalues and eigenvectors for the covariance matrix
 
-            float slopeAngle = std::acos(std::abs(matVec.at<float>(2, 2))) / M_PI * 180;
-            // float occupancy = 1.0f / (1.0f + exp(-(slopeAngle - _slopeAngleThreshold)));
+    //         float slopeAngle = std::acos(std::abs(matVec.at<float>(2, 2))) / M_PI * 180;
+    //         // float occupancy = 1.0f / (1.0f + exp(-(slopeAngle - _slopeAngleThreshold)));
 
-            float occupancy = 0.5 * (slopeAngle / _slopeAngleThreshold)
-                            + 0.5 * (maxDifference / _stepHeightThreshold);
+    //         float occupancy = 0.5 * (slopeAngle / _slopeAngleThreshold)
+    //                         + 0.5 * (maxDifference / _stepHeightThreshold);
 
-            if (slopeAngle > _slopeAngleThreshold || maxDifference > _stepHeightThreshold)
-                occupancy = 1;
+    //         if (slopeAngle > _slopeAngleThreshold || maxDifference > _stepHeightThreshold)
+    //             occupancy = 1;
 
-            thisCell->updateTraversabilityAlphaBeta(occupancy);
-        }
-    }
+    //         thisCell->updateTraversabilityAlphaBeta(occupancy);
+    //     }
+    // }
 
-    vector<float> findNeighborElevations(mapCell_t *centerCell){
+    // vector<float> findNeighborElevations(mapCell_t *centerCell){
 
-        vector<float> xyzVector;
+    //     vector<float> xyzVector;
 
-        grid_t centerGrid = centerCell->grid;
-        grid_t thisGrid;
+    //     grid_t centerGrid = centerCell->grid;
+    //     grid_t thisGrid;
 
-        for (int k = -footprintRadiusLength; k <= footprintRadiusLength; ++k){
-            for (int l = -footprintRadiusLength; l <= footprintRadiusLength; ++l){
-                // skip grids too far
-                if (std::sqrt(float(k*k + l*l)) * mapResolution > robotRadius)
-                    continue;
-                // the neighbor grid
-                thisGrid.cubeX = centerGrid.cubeX;
-                thisGrid.cubeY = centerGrid.cubeY;
-                thisGrid.gridX = centerGrid.gridX + k;
-                thisGrid.gridY = centerGrid.gridY + l;
-                // If the checked grid is in another sub-map, update it's indexes
-                if(thisGrid.gridX < 0){ --thisGrid.cubeX; thisGrid.gridX = thisGrid.gridX + mapCubeArrayLength;
-                }else if(thisGrid.gridX >= mapCubeArrayLength){ ++thisGrid.cubeX; thisGrid.gridX = thisGrid.gridX - mapCubeArrayLength; }
-                if(thisGrid.gridY < 0){ --thisGrid.cubeY; thisGrid.gridY = thisGrid.gridY + mapCubeArrayLength;
-                }else if(thisGrid.gridY >= mapCubeArrayLength){ ++thisGrid.cubeY; thisGrid.gridY = thisGrid.gridY - mapCubeArrayLength; }
-                // If the sub-map that the checked grid belongs to is empty or not
-                int mapInd = mapArrayInd[thisGrid.cubeX][thisGrid.cubeY];
-                if (mapInd == -1) continue;
-                // the neighbor cell
-                mapCell_t *thisCell = grid2Cell(&thisGrid);
-                // save neighbor cell for calculating traversability
-                if (thisCell->elevation != -FLT_MAX){
-                    xyzVector.push_back(thisCell->xyz->x);
-                    xyzVector.push_back(thisCell->xyz->y);
-                    xyzVector.push_back(thisCell->xyz->z);
-                }
-            }
-        }
+    //     for (int k = -footprintRadiusLength; k <= footprintRadiusLength; ++k){
+    //         for (int l = -footprintRadiusLength; l <= footprintRadiusLength; ++l){
+    //             // skip grids too far
+    //             if (std::sqrt(float(k*k + l*l)) * mapResolution > robotRadius)
+    //                 continue;
+    //             // the neighbor grid
+    //             thisGrid.cubeX = centerGrid.cubeX;
+    //             thisGrid.cubeY = centerGrid.cubeY;
+    //             thisGrid.gridX = centerGrid.gridX + k;
+    //             thisGrid.gridY = centerGrid.gridY + l;
+    //             // If the checked grid is in another sub-map, update it's indexes
+    //             if(thisGrid.gridX < 0){ --thisGrid.cubeX; thisGrid.gridX = thisGrid.gridX + mapCubeArrayLength;
+    //             }else if(thisGrid.gridX >= mapCubeArrayLength){ ++thisGrid.cubeX; thisGrid.gridX = thisGrid.gridX - mapCubeArrayLength; }
+    //             if(thisGrid.gridY < 0){ --thisGrid.cubeY; thisGrid.gridY = thisGrid.gridY + mapCubeArrayLength;
+    //             }else if(thisGrid.gridY >= mapCubeArrayLength){ ++thisGrid.cubeY; thisGrid.gridY = thisGrid.gridY - mapCubeArrayLength; }
+    //             // If the sub-map that the checked grid belongs to is empty or not
+    //             int mapInd = mapArrayInd[thisGrid.cubeX][thisGrid.cubeY];
+    //             if (mapInd == -1) continue;
+    //             // the neighbor cell
+    //             mapCell_t *thisCell = grid2Cell(&thisGrid);
+    //             // save neighbor cell for calculating traversability
+    //             if (thisCell->elevation != -FLT_MAX){
+    //                 xyzVector.push_back(thisCell->xyz->x);
+    //                 xyzVector.push_back(thisCell->xyz->y);
+    //                 xyzVector.push_back(thisCell->xyz->z);
+    //             }
+    //         }
+    //     }
 
-        return xyzVector;
-    }
-
-    void traversabilityMapPrediction(){
-
-        if (_makeTraversabilityPredictionFlag == false)
-            return;
-
-
-        // Prediction Process
-        for (int i = 0; i < mapArrayLength; ++i){
-            for (int j = 0; j < mapArrayLength; ++j){
-                // no need to predict
-                if (predictionArrayFlag[i][j] == false)
-                    continue;
-
-                if (mapArrayInd[i][j] == -1) continue;
-
-                // Training data
-                vector<float> yTrainVec;
-
-                for (int k = -1; k <= 1; ++k){
-                    for (int l = -1; l <= 1; ++l){
-                        // skip four corners
-                        if (std::abs(k) + std::abs(l) == 2)
-                            continue;
-                        // sub-map non-existing
-                        if (i+k < 0 || i+k >= mapArrayLength || j+l < 0 || j+l >= mapArrayLength) continue;
-                        int mapInd = mapArrayInd[i+k][j+l];
-                        if (mapInd == -1) continue;
-                        mapArray[mapInd]->findTrainingData("traversability");
-                        yTrainVec.insert(std::end(yTrainVec), std::begin(mapArray[mapInd]->yTrain2), std::end(mapArray[mapInd]->yTrain2));
-                    }
-                }
-
-                if (yTrainVec.size() == 0)
-                    continue;
-
-                Eigen::MatrixXf yTrain = Eigen::Map<const Eigen::Matrix<float, -1, -1, Eigen::RowMajor>>(yTrainVec.data(), yTrainVec.size(), 1);
-
-                // Testing data
-                int mapInd = mapArrayInd[i][j];
-
-                if (mapArray[mapInd]->xTest.size() == 0)
-                    continue;
-                // Predicting
-                Eigen::MatrixXf Ks = mapArray[mapInd]->Ks; // covariance matrix
-
-                Eigen::MatrixXf ybar = (Ks * yTrain).array();
-                Eigen::MatrixXf kbar = mapArray[mapInd]->kbar;
-
-                vector<mapCell_t*> testList = mapArray[mapInd]->testList; // testing data list
-                // Update Occupancy
-                for (int k = 0; k < testList.size(); ++k){
-
-                    if (std::isnan(ybar(k,0)) || std::isnan(kbar(k,0)))
-                        continue;
-
-                    if (ybar(k,0) == 0 && kbar(k,0) == 0) // too far away to training points, all zero
-                        continue;
-
-                    mapCell_t* thisCell = testList[k];
-
-                    float alphaOccu = thisCell->alphaOccu;
-                    float betaOccu = thisCell->betaOccu;
-                    alphaOccu += ybar(k,0);
-                    betaOccu  += kbar(k,0) - ybar(k,0);
-                    float occupancy = alphaOccu / (alphaOccu + betaOccu);
-
-                    if (!std::isnan(occupancy))
-                        thisCell->updateTraversabilityAlphaBeta(alphaOccu, betaOccu, occupancy);
-                }
-            }
-        }
-    }
+    //     return xyzVector;
+    // }
 
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -569,10 +357,8 @@ public:
     void publishMap(){
         // Publish Occupancy Grid Map and Elevation Map
         pubCount++;
-        if (pubCount >= 10){
+        if (pubCount >= 0){
             pubCount = 0;
-            if (getRobotPosition() == false) // Get Robot Position
-                return;
             publishLocalMap();
             publishTraversabilityMap();
         }
@@ -638,7 +424,7 @@ public:
                 if (thisCell->elevation != -FLT_MAX){
                     int index = i + j * localMapArrayLength; // index of the 1-D array 
                     occupancyMap2DHeight.height[index] = thisCell->elevation;
-                    occupancyMap2DHeight.occupancy.data[index] = thisCell->occupancy > 0.5 ? 100 : 0;
+                    occupancyMap2DHeight.occupancy.data[index] = thisCell->occupancy > 50 ? 100 : 0;
                 }
             }
         }
@@ -688,13 +474,12 @@ public:
         // 1. Find robot current cube index
         int currentCubeX = int((robotPoint.x + mapCubeLength/2.0) / mapCubeLength) + rootCubeIndex;
         int currentCubeY = int((robotPoint.y + mapCubeLength/2.0) / mapCubeLength) + rootCubeIndex;
-
         if (robotPoint.x + mapCubeLength/2.0 < 0)  --currentCubeX;
         if (robotPoint.y + mapCubeLength/2.0 < 0)  --currentCubeY;
-
         // 2. Loop through all the sub-maps that are nearby
-        for (int i = -_visualizationRadius + currentCubeX; i <= _visualizationRadius + currentCubeX; ++i){
-            for (int j = -_visualizationRadius + currentCubeY; j <= _visualizationRadius + currentCubeY; ++j){
+        int visualLength = int(visualizationRadius / mapCubeLength);
+        for (int i = -visualLength + currentCubeX; i <= visualLength + currentCubeX; ++i){
+            for (int j = -visualLength + currentCubeY; j <= visualLength + currentCubeY; ++j){
 
                 if (i < 0 || i >= mapArrayLength ||  j < 0 || j >= mapArrayLength) continue;
 
@@ -703,18 +488,13 @@ public:
                 *laserCloudElevation += mapArray[mapArrayInd[i][j]]->cloud;
             }
         }
-
-        pcl::PointCloud<PointType> laserCloudDS;
-        downSizeFilter.setInputCloud(laserCloudElevation);
-        downSizeFilter.filter(laserCloudDS);
-        *laserCloudElevation = laserCloudDS;
         // 3. Publish elevation point cloud
         sensor_msgs::PointCloud2 laserCloudTemp;
         pcl::toROSMsg(*laserCloudElevation, laserCloudTemp);
         laserCloudTemp.header.frame_id = "/map";
         laserCloudTemp.header.stamp = ros::Time::now();
         pubElevationCloud.publish(laserCloudTemp);
-
+        // 4. free memory
         laserCloudElevation->clear();
     }
 };
@@ -727,8 +507,6 @@ int main(int argc, char** argv){
     ros::init(argc, argv, "traversability_mapping");
     
     TraversabilityMapping tMapping;
-
-    std::thread predictionThread(&TraversabilityMapping::BGK, &tMapping);
 
     ROS_INFO("\033[1;32m---->\033[0m Traversability Mapping Started.");
 
