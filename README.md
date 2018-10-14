@@ -7,14 +7,10 @@ This repository contains code for a traversability mapping and motion plannign s
 
 - Install [ROS](http://www.ros.org/install/).
 
-- The system needs an external source to offer transformation between ```/map``` and ```/base_link```. Any SLAM methods that can work with Velodyne lidar should do the trick, i.e. LOAM and Google Cartographer. Many SLAM methods have been tested with our system. Here we **assume** you have LOAM installed since it offers the best localization performance. The LOAM package can be found by searching "loam_velodyne" on GitHub. Once you download the loam_velodyne package, remember to add these two lines to its launch file, which is called ```loam_velodyne.launch``` in ```/loam_velodyne/launch``` folder. The reason we need these two lines is because the world and the robot frame in loam_vedloyne is called ```/camera_init``` and ```/camera``` respectively. These two lines of code will establish two static transformations that connect ```/map``` and ```/base_link```. If you are using Google Cartographer, then you don't need these two lines because it offers transformation between ```/map``` and ```/base_link``` by default.
-```
-<node pkg="tf" type="static_transform_publisher" name="camera_init_to_map" args="0 0 0.3 1.570795 0 1.570795 /map /camera_init 10" />
-<node pkg="tf" type="static_transform_publisher" name="base_link_to_camera" args="0 0 0 -1.570795 -1.570795 0 /camera /base_link 10" />
-```
-- ROS navigation stack also needs to be installed for autonomous navigation. You can install it by running ```sudo apt-get install ros-indigo-navigation```. If you are using other versions of ROS, replace indigo in the command with your ROS version.
+- Install [LeGO-LOAM](https://github.com/RobustFieldAutonomyLab/LeGO-LOAM).
 
-- Download some ROS bag files if you don't have a robot right now. Some bag files can be found [here](https://drive.google.com/drive/folders/0B0hyPClc-TrQdHdwQXhMa3R5WGs?usp=sharing).
+- Install [ROS Navigation stack](http://wiki.ros.org/navigation). You can install it by running ```sudo apt-get install ros-indigo-navigation```. If you are using other versions of ROS, replace indigo in the command with your ROS version.
+
 
 ## Compile
 
@@ -34,13 +30,13 @@ When you compile the code for the first time, you need to add "-j1" behind "catk
 ```
 roslaunch traversability_mapping offline.launch
 ```
-Notes: this launch file will launch all the essential packages for traversability mapping and motion planning. Note that it assumes you are using LOAM to give robot position. If you are using other SLAM methods, please replace the corresponding launch file for it.
+Notes: this launch file will launch all the essential packages for traversability mapping and motion planning. Note that it assumes you are using LeGO-LOAM to give robot position. If you are using other SLAM methods, please replace the corresponding launch file for it.
 
 2. Play existing bag files:
 ```
 rosbag play *.bag --clock --topic /velodyne_points /imu/data
 ```
-Notes: our system only needs /velodyne_points for input from bag files. However, a 3D SLAM method usually also needs /imu/data.
+Notes: our system only needs /velodyne_points for input from bag files. However, a 3D SLAM method usually needs /imu/data.
 
 ## Run the System (with real robot)
 
