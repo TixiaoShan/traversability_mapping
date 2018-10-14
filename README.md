@@ -30,7 +30,6 @@ When you compile the code for the first time, you need to add "-j1" behind "catk
 ```
 roslaunch traversability_mapping offline.launch
 ```
-Notes: this launch file will launch all the essential packages for traversability mapping and motion planning. Note that it assumes you are using LeGO-LOAM to give robot position. If you are using other SLAM methods, please replace the corresponding launch file for it.
 
 2. Play existing bag files:
 ```
