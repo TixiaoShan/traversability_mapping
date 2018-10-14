@@ -24,15 +24,15 @@ You can use the following commands to download and compile the package.
 cd ~/catkin_ws/src
 git clone https://github.com/RobustFieldAutonomyLab/Traversability_Mapping.git
 cd ..
-catkin_make
+catkin_make -j1
 ```
-Note that sometimes elevation_msgs package is not compiled before traversability_mapping package and an error will occur. You just need to run ```catkin_make``` again to finish compiling.
+When you compile the code for the first time, you need to add "-j1" behind "catkin_make" for generating some message types. "-j1" is not needed for future compiling.
 
 ## Run the System (in simulation)
 
 1. Run the launch file:
 ```
-roslaunch traversability_mapping traversability_mapping_offline.launch
+roslaunch traversability_mapping offline.launch
 ```
 Notes: this launch file will launch all the essential packages for traversability mapping and motion planning. Note that it assumes you are using LOAM to give robot position. If you are using other SLAM methods, please replace the corresponding launch file for it.
 
@@ -46,9 +46,5 @@ Notes: our system only needs /velodyne_points for input from bag files. However,
 
 Run the launch file:
 ```
-roslaunch traversability_mapping traversability_mapping_online.launch
+roslaunch traversability_mapping online.launch
 ```
-
-## Use the System
-
-You can just simply drag the blue goal flag, which is an interactive marker in Rviz, to a mapped position. A path will be generated and displayed. If you are using a real robot, the robot will be driven by ROS navigation stack to follow the path.
