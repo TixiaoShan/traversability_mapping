@@ -57,11 +57,3 @@ target_link_libraries(traversability_prm ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${
 # move_base Planner Plugin
 add_library(tm_planner_lib src/library/tm_planner.cpp)
 target_link_libraries(tm_planner_lib ${catkin_LIBRARIES})
-
-# 3D goal handler
-add_executable(traversability_goal src/library/traversability_goal.cpp)
-target_link_libraries(traversability_goal ${catkin_LIBRARIES})
-
-# test
-add_executable(testCloud2Graph 	src/library/testCloud2Graph.cpp)
-target_link_libraries(testCloud2Graph ${catkin_LIBRARIES} ${PCL_LIBRARIES})

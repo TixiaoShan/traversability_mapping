@@ -359,7 +359,7 @@ public:
     void publishMap(){
         // Publish Occupancy Grid Map and Elevation Map
         pubCount++;
-        if (pubCount >= visualizationFrequency){
+        if (pubCount > visualizationFrequency){
             pubCount = 1;
             publishLocalMap();
             publishTraversabilityMap();
@@ -472,12 +472,9 @@ public:
 
         if (pubElevationCloud.getNumSubscribers() == 0)
             return;
-
         // 1. Find robot current cube index
-        int currentCubeX = int((robotPoint.x + mapCubeLength/2.0) / mapCubeLength) + rootCubeIndex;
-        int currentCubeY = int((robotPoint.y + mapCubeLength/2.0) / mapCubeLength) + rootCubeIndex;
-        if (robotPoint.x + mapCubeLength/2.0 < 0)  --currentCubeX;
-        if (robotPoint.y + mapCubeLength/2.0 < 0)  --currentCubeY;
+        int currentCubeX, currentCubeY;
+        getPointCubeIndex(&currentCubeX, &currentCubeY, &robotPoint);
         // 2. Loop through all the sub-maps that are nearby
         int visualLength = int(visualizationRadius / mapCubeLength);
         for (int i = -visualLength; i <= visualLength; ++i){
