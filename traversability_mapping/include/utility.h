@@ -69,6 +69,9 @@ typedef pcl::PointXYZI  PointType;
 typedef struct kdtree kdtree_t;
 typedef struct kdres kdres_t;
 
+// Environment
+extern const bool urbanMapping = true;
+
 // VLP-16
 extern const int N_SCAN = 16;
 extern const int Horizon_SCAN = 1800;
@@ -86,9 +89,9 @@ extern const int scanNumSlopeFilter = 10;
 extern const int scanNumMax = std::max(scanNumCurbFilter, scanNumSlopeFilter);
 
 // Filter Threshold Params
-extern const float sensorRangeLimit = 12;
-extern const float filterHeightLimit = 0.05; // sstep diff threshold 
-extern const float filterAngleLimit = 20; // slope angle threshold           >>>>>>>>----------------------------<<<<<<<<
+extern const float sensorRangeLimit = 12; // only keep points with in ...   
+extern const float filterHeightLimit = (urbanMapping == true) ? 0.05 : 0.1; // step diff threshold         
+extern const float filterAngleLimit = 20; // slope angle threshold          
 extern const int filterHeightMapArrayLength = sensorRangeLimit*2 / mapResolution;
 
 // BGK Prediction Params
@@ -96,7 +99,7 @@ extern const bool predictionEnableFlag = true;
 extern const float predictionKernalSize = 0.2; // predict elevation within x meters
 
 // Occupancy Params
-extern const float p_occupied_when_laser = 0.8;
+extern const float p_occupied_when_laser = 0.9;
 extern const float p_occupied_when_no_laser = 0.3;
 extern const float large_log_odds = 100;
 extern const float max_log_odds_for_belief = 20;
@@ -106,14 +109,16 @@ extern const int localMapLength = 20; // length of the local occupancy grid map 
 extern const int localMapArrayLength = localMapLength / mapResolution;
 
 // Visualization Params
-extern const float visualizationRadius = 100;
+extern const float visualizationRadius = 50;
+extern const float visualizationFrequency = 5; // n, skip n scans then publish, n=0, visualize at each scan
 
 // Robot Params
 extern const float robotRadius = 0.2;
-extern const float _sensorHeight = 0.5;
+extern const float sensorHeight = 0.5;
 extern const int footprintRadiusLength = int(robotRadius / mapResolution);
-extern const float _slopeAngleThreshold = 20; // slope angle threshold
-extern const float _stepHeightThreshold = 0.1;
+
+// Traversability Params
+extern const float traversabilityCalculatingDistance = 8.0;
 
 // Planning Cost Params
 extern const int NUM_COSTS = 3;
@@ -122,7 +127,7 @@ extern const std::vector<int> costHierarchy(tmp, tmp+sizeof(tmp)/sizeof(int));//
 
 // PRM Planner Settings
 extern const float costmapInflationRadius = 0.3;
-extern const float neighborSampleRadius  = 0.8;
+extern const float neighborSampleRadius  = 0.5;
 extern const float neighborConnectHeight = 1.0;
 extern const float neighborConnectRadius = 2.0;
 extern const float neighborSearchRadius = localMapLength / 2;

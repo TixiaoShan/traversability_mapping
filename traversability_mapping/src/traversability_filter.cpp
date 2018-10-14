@@ -174,8 +174,12 @@ public:
     }
 
     void applyFilter(){
-        positiveCurbFilter();
-        negativeCurbFilter();
+
+        if (urbanMapping == true){
+            positiveCurbFilter();
+            negativeCurbFilter();
+        }
+        
         slopeFilter();
     }
 
@@ -304,11 +308,13 @@ public:
         }
 
         // Publish laserCloudOut for visualization (before downsample and BGK prediction)
-        sensor_msgs::PointCloud2 laserCloudTemp;
-        pcl::toROSMsg(*laserCloudOut, laserCloudTemp);
-        laserCloudTemp.header.stamp = ros::Time::now();
-        laserCloudTemp.header.frame_id = "map";
-        pubCloudVisual.publish(laserCloudTemp);
+        if (pubCloudVisual.getNumSubscribers() != 0){
+            sensor_msgs::PointCloud2 laserCloudTemp;
+            pcl::toROSMsg(*laserCloudOut, laserCloudTemp);
+            laserCloudTemp.header.stamp = ros::Time::now();
+            laserCloudTemp.header.frame_id = "map";
+            pubCloudVisual.publish(laserCloudTemp);
+        }
     }
 
     void downsampleCloud(){
