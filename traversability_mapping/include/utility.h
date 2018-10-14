@@ -90,7 +90,7 @@ extern const int scanNumMax = std::max(scanNumCurbFilter, scanNumSlopeFilter);
 
 // Filter Threshold Params
 extern const float sensorRangeLimit = 12; // only keep points with in ...   
-extern const float filterHeightLimit = (urbanMapping == true) ? 0.05 : 0.1; // step diff threshold         
+extern const float filterHeightLimit = (urbanMapping == true) ? 0.06 : 0.1; // step diff threshold         
 extern const float filterAngleLimit = 20; // slope angle threshold          
 extern const int filterHeightMapArrayLength = sensorRangeLimit*2 / mapResolution;
 
@@ -100,7 +100,7 @@ extern const float predictionKernalSize = 0.2; // predict elevation within x met
 
 // Occupancy Params
 extern const float p_occupied_when_laser = 0.9;
-extern const float p_occupied_when_no_laser = 0.3;
+extern const float p_occupied_when_no_laser = 0.2;
 extern const float large_log_odds = 100;
 extern const float max_log_odds_for_belief = 20;
 
@@ -118,6 +118,7 @@ extern const float sensorHeight = 0.5;
 extern const int footprintRadiusLength = int(robotRadius / mapResolution);
 
 // Traversability Params
+extern const int traversabilityObserveTimeTh = 10;
 extern const float traversabilityCalculatingDistance = 8.0;
 
 // Planning Cost Params

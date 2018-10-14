@@ -780,7 +780,7 @@ int main(int argc, char** argv){
 
     TraversabilityPRM TPRM;
 
-    ROS_INFO("\033[1;32m---->\033[0m Traversability PRM Planner Started.");
+    ROS_INFO("\033[1;32m---->\033[0m Traversability Planner Started.");
 
     ros::spin();
     return 0;

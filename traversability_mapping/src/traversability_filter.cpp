@@ -179,7 +179,7 @@ public:
             positiveCurbFilter();
             negativeCurbFilter();
         }
-        
+
         slopeFilter();
     }
 
@@ -452,7 +452,7 @@ public:
                 p.x = xTestVec[0];
                 p.y = xTestVec[1];
                 p.z = elevation;
-                p.intensity = (occupancy > 0.6) ? 100 : 0;
+                p.intensity = (occupancy > 0.5) ? 100 : 0;
 
                 laserCloudOut->push_back(p);
             }
@@ -546,7 +546,7 @@ int main(int argc, char** argv){
     
     TraversabilityFilter TFilter;
 
-    ROS_INFO("\033[1;32m---->\033[0m Traversability Point Cloud Filter Started.");
+    ROS_INFO("\033[1;32m---->\033[0m Traversability Filter Started.");
 
     ros::spin();
 

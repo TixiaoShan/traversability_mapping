@@ -137,10 +137,8 @@ public:
 
     void updateCellObservationTime(mapCell_t *thisCell){
         ++thisCell->observeTimes;
-        if (thisCell->observeTimes >= 20){
+        if (thisCell->observeTimes >= traversabilityObserveTimeTh)
             observingList1.push_back(thisCell);
-            thisCell->observeTimes = 0;
-        }
     }
 
     void updateCellOccupancy(mapCell_t *thisCell, PointType *point){
@@ -183,7 +181,8 @@ public:
         float x_pred = thisCell->elevation; // x = F * x + B * u
         float P_pred = thisCell->elevationVar + 0.01; // P = F*P*F + Q
         // Update:
-        float R = pointDistance(robotPoint, *point); // measurement noise: R
+        float R_factor = (thisCell->observeTimes > 20) ? 10 : 1;
+        float R = pointDistance(robotPoint, *point) * R_factor; // measurement noise: R, scale it with dist and observed times
         float K = P_pred / (P_pred + R);// Gain: K  = P * H^T * (HPH + R)^-1
         float y = point->z; // measurement: y
         float x_final = x_pred + K * (y - x_pred); // x_final = x_pred + K * (y - H * x_pred)
@@ -253,7 +252,6 @@ public:
         }
     }
 
-
     void traversabilityMapCalculation(){
 
         // no new scan, return
@@ -289,7 +287,7 @@ public:
             float maxElevation = matPoints.col(2).maxCoeff();
             float maxDifference = maxElevation - minElevation;
 
-            if (maxElevation - minElevation > filterHeightLimit){
+            if (maxDifference > filterHeightLimit){
                 thisPoint.intensity = 100;
                 updateCellOccupancy(thisCell, &thisPoint);
                 continue;
@@ -520,6 +518,8 @@ int main(int argc, char** argv){
     std::thread predictionThread(&TraversabilityMapping::TraversabilityThread, &tMapping);
 
     ROS_INFO("\033[1;32m---->\033[0m Traversability Mapping Started.");
+    ROS_INFO("\033[1;32m---->\033[0m Traversability Mapping Scenario: %s.", 
+        urbanMapping == true ? "\033[1;31mUrban\033[0m" : "\033[1;31mTerrain\033[0m");
 
     ros::spin();
 
