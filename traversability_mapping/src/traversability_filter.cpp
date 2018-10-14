@@ -232,13 +232,14 @@ public:
                 // point without range value cannot be verified
                 if (rangeMatrix.at<float>(i, j) == -1)
                     continue;
-                //
+                // check neighbors
                 for (int m = -rangeCompareNeighborNum; m <= rangeCompareNeighborNum; ++m){
                     int k = j + m;
                     if (k < 0 || k >= Horizon_SCAN)
                         continue;
                     if (rangeMatrix.at<float>(i, k) == -1)
                         continue;
+                    // height diff greater than threashold, might be a negative curb
                     if (laserCloudMatrix[i][j].z - laserCloudMatrix[i][k].z > 0.1
                         && pointDistance(laserCloudMatrix[i][j], laserCloudMatrix[i][k]) <= 1.0){
                         obstacleMatrix.at<int>(i, j) = 1;

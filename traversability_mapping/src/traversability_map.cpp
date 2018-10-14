@@ -182,7 +182,7 @@ public:
         // cell is observed for the first time, no need to use Kalman filter
         if (thisCell->elevation == -FLT_MAX){
             thisCell->elevation = point->z;
-            thisCell->elevationVar = pointDistance(robotPoint, *point) / 10;
+            thisCell->elevationVar = pointDistance(robotPoint, *point);
             return;
         }
 
@@ -190,7 +190,7 @@ public:
         float x_pred = thisCell->elevation; // x = F * x + B * u
         float P_pred = thisCell->elevationVar + 0.01; // P = F*P*F + Q
         // Update:
-        float R = pointDistance(robotPoint, *point) / 10; // measurement noise: R
+        float R = pointDistance(robotPoint, *point); // measurement noise: R
         float K = P_pred / (P_pred + R);// Gain: K  = P * H^T * (HPH + R)^-1
         float y = point->z; // measurement: y
         float x_final = x_pred + K * (y - x_pred); // x_final = x_pred + K * (y - H * x_pred)
