@@ -80,8 +80,12 @@ extern const int mapCubeArrayLength = mapCubeLength / mapResolution; // the grid
 extern const int mapArrayLength = 2000 / mapCubeLength; // the sub-map dimension of global map (2000m x 2000m)
 extern const int rootCubeIndex = mapArrayLength / 2; // by default, robot is at the center of global map at the beginning
 
-// Filter Params
-extern const int maxScanCheckNum = 10;
+// Filter Ring Params
+extern const int scanNumCurbFilter = 8;
+extern const int scanNumSlopeFilter = 10;
+extern const int scanNumMax = std::max(scanNumCurbFilter, scanNumSlopeFilter);
+
+// Filter Threshold Params
 extern const float sensorRangeLimit = 12;
 extern const float filterHeightLimit = 0.05; // sstep diff threshold 
 extern const float filterAngleLimit = 20; // slope angle threshold           >>>>>>>>----------------------------<<<<<<<<

@@ -68,12 +68,12 @@ Visualization Manager:
       Reference Frame: map
       Value: false
     - Class: rviz/Axes
-      Enabled: true
+      Enabled: false
       Length: 1
       Name: base_link
       Radius: 0.200000003
       Reference Frame: base_link
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -86,7 +86,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 0
       Max Intensity: 100
@@ -103,12 +103,12 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: false
-      Value: false
+      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 41.2006912
-        Min Value: 19.0690956
+        Max Value: 24.3650856
+        Min Value: 1.94612694
         Value: true
       Axis: X
       Channel Name: intensity
@@ -116,7 +116,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: AxisColor
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 0
       Max Intensity: 100
@@ -133,7 +133,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: false
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: false
       Autocompute Value Bounds:
@@ -169,7 +169,7 @@ Visualization Manager:
       Color Scheme: map
       Draw Behind: false
       Enabled: false
-      Name: Occupancy Map (Local)
+      Name: Occup Map
       Topic: /occupancy_map_local
       Unreliable: false
       Use Timestamp: false
@@ -239,7 +239,7 @@ Visualization Manager:
       Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 155
+      Max Intensity: 62
       Min Color: 0; 0; 0
       Min Intensity: 0
       Name: Trajectory
@@ -247,7 +247,7 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.300000012
+      Size (m): 0.100000001
       Style: Squares
       Topic: /key_pose_origin
       Unreliable: false
@@ -361,7 +361,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 21.8020554
+      Distance: 25.3033104
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -376,10 +376,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.474797368
+      Pitch: 0.864797354
       Target Frame: base_link
       Value: Orbit (rviz)
-      Yaw: 2.56232285
+      Yaw: 2.28922915
     Saved: ~
 Window Geometry:
   Displays:
