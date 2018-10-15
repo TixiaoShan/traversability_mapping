@@ -25,8 +25,8 @@ find_package(catkin REQUIRED COMPONENTS
   nav_core
 )
 
-find_package(PCL REQUIRED)
-find_package(OpenCV REQUIRED)
+find_package(PCL REQUIRED QUIET)
+find_package(OpenCV REQUIRED QUIET)
 
 catkin_package(
   INCLUDE_DIRS include
@@ -34,7 +34,20 @@ catkin_package(
   DEPENDS PCL
 )
 
-include_directories( include ${catkin_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
+# include directories
+include_directories(
+  include 
+  ${catkin_INCLUDE_DIRS} 
+  ${PCL_INCLUDE_DIRS} 
+  ${OpenCV_INCLUDE_DIRS}
+)
+
+# link directories
+link_directories(
+  include
+  ${OpenCV_LIBRARY_DIRS}
+  ${PCL_LIBRARY_DIRS}
+)
 
 ###########
 ## Build ##
