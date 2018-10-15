@@ -1,11 +1,11 @@
 TrajectoryPlannerROS:
 
   # Robot Configuration Parameters
-  acc_lim_x: 3.0 # default 10
-  acc_lim_theta: 3.0 # default 20
+  acc_lim_x: 10.0 # default 10
+  acc_lim_theta: 10.0 # default 20
 
-  max_vel_x: 0.5
-  min_vel_x: 0.1
+  max_vel_x: 1.5
+  min_vel_x: 0.3
 
   max_vel_theta: 0.75 # default 1.57
   min_vel_theta: -0.75 # default -1.57
@@ -15,17 +15,17 @@ TrajectoryPlannerROS:
   escape_vel: -0.5
 
   # Goal Tolerance Parameters
-  yaw_goal_tolerance: 0.314 # We don't care about orientation
-  xy_goal_tolerance: 0.3 # default 0.25
+  yaw_goal_tolerance: 3.14 # We don't care about orientation
+  xy_goal_tolerance: 0.5 # default 0.25
   latch_xy_goal_tolerance: false
 
   # Forward Simulation Parameters
   sim_time: 2.0 # default 2.0 ----> (xy_goal_tolerance / 2) > (min_vel_x *  sim_time)
   sim_granularity: 0.02
   angular_sim_granularity: 0.02
-  vx_samples: 10 # default 6
+  vx_samples: 20 # default 6
   vtheta_samples: 20
-  controller_frequency: 5.0
+  controller_frequency: 10.0
 
   # Trajectory scoring parameters
   meter_scoring: true # Whether the gdist_scale and pdist_scale parameters should assume that goal_distance and path_distance are expressed in units of meters or cells. Cells are assumed by default (false).
