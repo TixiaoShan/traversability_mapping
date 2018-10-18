@@ -236,6 +236,9 @@ public:
                 // point without range value cannot be verified
                 if (rangeMatrix.at<float>(i, j) == -1)
                     continue;
+                // point is too far away, skip comparison since it can be inaccurate
+                if (rangeMatrix.at<float>(i, j) > sensorRangeLimit)
+                    continue;
                 // check neighbors
                 for (int m = -rangeCompareNeighborNum; m <= rangeCompareNeighborNum; ++m){
                     int k = j + m;
@@ -263,6 +266,9 @@ public:
                     continue;
                 // point without range value cannot be verified
                 if (rangeMatrix.at<float>(i, j) == -1 || rangeMatrix.at<float>(i+1, j) == -1)
+                    continue;
+                // point is too far away, skip comparison since it can be inaccurate
+                if (rangeMatrix.at<float>(i, j) > sensorRangeLimit)
                     continue;
                 // Two range filters here:
                 // 1. if a point's range is larger than scanNumSlopeFilter th ring point's range
@@ -293,7 +299,7 @@ public:
         for (int i = 0; i < scanNumMax; ++i){
             for (int j = 0; j < Horizon_SCAN; ++j){
                 // invalid points and points too far are skipped
-                if (rangeMatrix.at<float>(i, j) >= sensorRangeLimit ||
+                if (rangeMatrix.at<float>(i, j) > sensorRangeLimit ||
                     rangeMatrix.at<float>(i, j) == -1)
                     continue;
                 // update point intensity (occupancy) into
