@@ -153,17 +153,7 @@ public:
         goalState->x[0] = goal->pose.position.x;
         goalState->x[1] = goal->pose.position.y;
         goalState->x[2] = goal->pose.position.z;
-
-        // receive cancel planning order (traversability_goal.cpp)
-        if (goalState->x[0] == -FLT_MAX){
-            displayGlobalPath.poses.clear();
-            return;
-        }
-
-        nearestGoalState = getNearestState(goalState);
-        // the nearest goal state is invalid
-        if (nearestGoalState == NULL || nearestGoalState->neighborList.size() == 0)
-            return;
+        
         // start planning
         planningFlag = true;
     }
@@ -184,7 +174,7 @@ public:
             nodeList[i]->parentState = NULL;
         }
         // 2. find the state that is the closest to the robot
-        state_t *startState;
+        state_t *startState = NULL;
 
         vector<state_t*> nearRobotStates;
         getNearStates(robotState, nearRobotStates, 2);
@@ -193,15 +183,16 @@ public:
 
         float nearRobotDist = FLT_MAX;
         for (int i = 0; i < nearRobotStates.size(); ++i){
-            if (distance(nearRobotStates[i]->x, robotState->x) < nearRobotDist 
-                && nearRobotStates[i]->neighborList.size() != 0){
-                nearRobotDist = distance(nearRobotStates[i]->x, robotState->x);
+            float dist = distance(nearRobotStates[i]->x, robotState->x);
+            if (dist < nearRobotDist && nearRobotStates[i]->neighborList.size() != 0){
+                nearRobotDist = dist;
                 startState = nearRobotStates[i];
             }
         }
-        // state_t *startState = getNearestState(robotState);
-        // if (startState == NULL || startState->neighborList.size() == 0)
-        //     return false;
+
+        if (startState == NULL || startState->neighborList.size() == 0)
+            return false;
+
         for (int i = 0; i < NUM_COSTS; ++i)
             startState->costsToRoot[i] = 0;
         // 3. BFS search
@@ -214,8 +205,8 @@ public:
             state_t *fromState = minCostStateInQueue(Queue);
             Queue.erase(remove(Queue.begin(), Queue.end(), fromState), Queue.end());
             // stop searching if minimum cost path to goal is found
-            if (fromState == nearestGoalState)
-                break;
+            // if (fromState == nearestGoalState)
+            //     break;
             // lopp through all neighbors of this state
             for (int i = 0; i < fromState->neighborList.size(); ++i){
                 state_t *toState = fromState->neighborList[i].neighbor;
@@ -240,10 +231,27 @@ public:
                 }
             }
         }
-        // 4. Extract path
-        if (nearestGoalState->parentState == NULL) // no path to the nearestGoalState is found
+
+        // 4. Find valid nearestGoalState in PRM
+        nearestGoalState = getNearestState(goalState);
+        // find near states to nearestGoalState
+        vector<state_t*> nearGoalStates;
+        getNearStates(nearestGoalState, nearGoalStates, 20);
+        if (nearGoalStates.size() > 0){
+            float nearRobotDist = FLT_MAX;
+            for (int i = 0; i < nearGoalStates.size(); ++i){
+                float dist = distance(nearGoalStates[i]->x, goalState->x);
+                if (dist < nearRobotDist && nearGoalStates[i]->parentState != NULL){
+                    nearRobotDist = dist;
+                    nearestGoalState = nearGoalStates[i];
+                }
+            }
+        }
+        // the nearest goal state is invalid
+        if (nearestGoalState == NULL || nearestGoalState->parentState == NULL) // no path to the nearestGoalState is found
             return false;
 
+        // 4. Extract path
         state_t *thisState = nearestGoalState;
         while (thisState->parentState != NULL){
             pathList.insert(pathList.begin(), thisState);
@@ -518,7 +526,6 @@ public:
     double getStateHeight(state_t* stateIn){
         int rounded_x = (int)((stateIn->x[0] - map_min[0]) / mapResolution);
         int rounded_y = (int)((stateIn->x[1] - map_min[1]) / mapResolution);
-        // cout << rounded_x << " " << rounded_y << endl;
         return elevationMap.height[rounded_x + rounded_y * elevationMap.occupancy.info.width];
     }
 
@@ -535,13 +542,7 @@ public:
 
         // close to obstacles within ... m
         if (elevationMap.costMap[index] > 0)
-                return true;
-
-        if (planningUnknown == false){
-            // stateIn->x is on an unknown grid
-            if (elevationMap.height[index] == -FLT_MAX)
-                return true;
-        }        
+            return true;
         
         return false;
     }
