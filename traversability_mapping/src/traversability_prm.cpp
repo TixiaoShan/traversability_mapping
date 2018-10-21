@@ -322,7 +322,7 @@ public:
     void generateSamples(){
 
         double sampling_start_time = ros::WallTime::now().toSec();
-        while (ros::WallTime::now().toSec() - sampling_start_time < 0.01 && ros::ok()){
+        while (ros::WallTime::now().toSec() - sampling_start_time < 0.002 && ros::ok()){
 
             state_t* newState = new state_t;
 
@@ -462,11 +462,17 @@ public:
         if (rounded_x < 0 || rounded_x >= localMapArrayLength ||
             rounded_y < 0 || rounded_y >= localMapArrayLength )
             return true;
-        if (elevationMap.costMap[index] != 0)
-            return true;
-        // state is on an unknown grid
-        if (elevationMap.height[index] == -FLT_MAX)
-            return true;
+        
+        // close to obstacles within ... m
+        if (elevationMap.costMap[index] > 0)
+                return true;
+
+        if (planningUnknown == false){
+            // stateIn->x is on an unknown grid
+            if (elevationMap.height[index] == -FLT_MAX)
+                return true;
+        } 
+
         return false;
     }
 
@@ -515,6 +521,7 @@ public:
         // cout << rounded_x << " " << rounded_y << endl;
         return elevationMap.height[rounded_x + rounded_y * elevationMap.occupancy.info.width];
     }
+
     // Collision check (using state for input)
     bool isIncollision(state_t* stateIn){
         // if the state is outside the map, discard this state
@@ -525,11 +532,16 @@ public:
         int rounded_x = (int)((stateIn->x[0] - map_min[0]) / mapResolution);
         int rounded_y = (int)((stateIn->x[1] - map_min[1]) / mapResolution);
         int index = rounded_x + rounded_y * elevationMap.occupancy.info.width;
-        if (elevationMap.costMap[index] != 0) // == 100 or != 0
-            return true;
-        // stateIn->x is on an unknown grid
-        if (elevationMap.height[index] == -FLT_MAX)
-            return true;
+
+        // close to obstacles within ... m
+        if (elevationMap.costMap[index] > 0)
+                return true;
+
+        if (planningUnknown == false){
+            // stateIn->x is on an unknown grid
+            if (elevationMap.height[index] == -FLT_MAX)
+                return true;
+        }        
         
         return false;
     }

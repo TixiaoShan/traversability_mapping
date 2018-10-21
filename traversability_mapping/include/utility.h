@@ -127,6 +127,7 @@ extern const int tmp[] = {2};
 extern const std::vector<int> costHierarchy(tmp, tmp+sizeof(tmp)/sizeof(int));// c++11 initialization: costHierarchy{0, 1, 2}
 
 // PRM Planner Settings
+extern const bool planningUnknown = true;
 extern const float costmapInflationRadius = 0.3;
 extern const float neighborSampleRadius  = 0.5;
 extern const float neighborConnectHeight = 1.0;
