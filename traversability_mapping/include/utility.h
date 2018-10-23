@@ -273,6 +273,8 @@ struct state_t{
     double x[3]; //  1 - x, 2 - y, 3 - z
     float theta;
     int stateId;
+    float cost;
+    bool validFlag;
     // # Cost types
     // # 0. obstacle cost
     // # 1. elevation cost
