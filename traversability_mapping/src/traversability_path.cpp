@@ -20,22 +20,24 @@ public:
     float map_min[3]; // 0 - x, 1 - y, 2 - z
     float map_max[3];
 
-    ros::Publisher pubPathLibrary; // path extracted from roadmap
+    
     ros::Publisher pubPathCloud;
+    ros::Publisher pubPathLibraryValid;
+    ros::Publisher pubPathLibraryOrigin;
 
     ros::Publisher pubGlobalPath; // path is published in pose array format 
 
     tf::TransformListener listener;
     tf::StampedTransform transform;
 
-    const int pathDepth = 5;
+    const int pathDepth = 4;
 
     bool planningFlag; // set to "true" once goal is received from move_base
 
-    const float angularVelocityMax = M_PI / 30.0;
-    const float angularVelocityRes = M_PI / 180.0;
-    const float angularVelocityMax2 = M_PI / 60.0;
-    const float angularVelocityRes2 = M_PI / 120.0;
+    const float angularVelocityMax = 0.75 / 180.0 * M_PI;
+    const float angularVelocityRes = 0.25 / 180.0 * M_PI;
+    const float angularVelocityMax2 = 0.5 / 180.0 * M_PI;
+    const float angularVelocityRes2 = 0.25 / 180.0 * M_PI;
     const float forwardVelocity = 0.1;
     const float deltaTime = 1;
     const int simTime = 30;
@@ -62,7 +64,8 @@ public:
         pubGlobalPath = nh.advertise<nav_msgs::Path>("/global_path", 1);
 
         pubPathCloud = nh.advertise<sensor_msgs::PointCloud2>("/path_trajectory", 1);
-        pubPathLibrary = nh.advertise<sensor_msgs::PointCloud2>("/path_library", 1);
+        pubPathLibraryValid = nh.advertise<sensor_msgs::PointCloud2>("/path_library_valid", 1);
+        pubPathLibraryOrigin = nh.advertise<sensor_msgs::PointCloud2>("/path_library_origin", 1);
 
         subGoal = nh.subscribe<geometry_msgs::PoseStamped>("/prm_goal", 1, &TraversabilityPath::goalPosHandler, this);
         subElevationMap = nh.subscribe<elevation_msgs::OccupancyElevation>("/occupancy_map_local_height", 1, &TraversabilityPath::elevationMapHandler, this);  
@@ -150,16 +153,14 @@ public:
 
         std::lock_guard<std::mutex> lock(mtx);
 
-        if (planningFlag == false)
-            return;
-
         elevationMap = *mapMsg;
-
-        updateMapBoundary();
 
         updateCostMap();
 
-        updatePaths();
+        updatePathLibrary();
+
+        if (planningFlag == false)
+            return;
 
         updateTrajectory();
 
@@ -176,16 +177,15 @@ public:
         planningFlag = true;
     }
 
-    void updateMapBoundary(){
+    void updateCostMap(){
+
         map_min[0] = elevationMap.occupancy.info.origin.position.x; 
         map_min[1] = elevationMap.occupancy.info.origin.position.y;
         map_min[2] = elevationMap.occupancy.info.origin.position.z;
         map_max[0] = elevationMap.occupancy.info.origin.position.x + elevationMap.occupancy.info.resolution * elevationMap.occupancy.info.width; 
         map_max[1] = elevationMap.occupancy.info.origin.position.y + elevationMap.occupancy.info.resolution * elevationMap.occupancy.info.height; 
         map_max[2] = elevationMap.occupancy.info.origin.position.z;
-    }
 
-    void updateCostMap(){
         int sizeMap = elevationMap.occupancy.data.size();
         int inflationSize = int(costmapInflationRadius / elevationMap.occupancy.info.resolution);
         for (int i = 0; i < sizeMap; ++i) {
@@ -206,7 +206,7 @@ public:
         }
     }
 
-    void updatePaths(){
+    void updatePathLibrary(){
 
         // 1. Reset valid flag
         for (int i = 0; i < stateListSize; ++i){
@@ -249,12 +249,21 @@ public:
         }
 
         // 5. Visualize valid states (or paths)
-        if (pubPathLibrary.getNumSubscribers() != 0){
+        if (pubPathLibraryValid.getNumSubscribers() != 0){
             sensor_msgs::PointCloud2 laserCloudTemp;
             pcl::toROSMsg(*pathCloudValid, laserCloudTemp);
             laserCloudTemp.header.stamp = ros::Time::now();
             laserCloudTemp.header.frame_id = "map";
-            pubPathLibrary.publish(laserCloudTemp);
+            pubPathLibraryValid.publish(laserCloudTemp);
+        }
+
+        // 6. Visualize all library states (or paths)
+        if (pubPathLibraryOrigin.getNumSubscribers() != 0){
+            sensor_msgs::PointCloud2 laserCloudTemp;
+            pcl::toROSMsg(*pathCloudLocal, laserCloudTemp);
+            laserCloudTemp.header.stamp = ros::Time::now();
+            laserCloudTemp.header.frame_id = "base_link";
+            pubPathLibraryOrigin.publish(laserCloudTemp);
         }
     }
 
@@ -386,7 +395,7 @@ public:
         pcl::toROSMsg(*pathCloudValid, laserCloudTemp);
         laserCloudTemp.header.stamp = ros::Time::now();
         laserCloudTemp.header.frame_id = "base_link";
-        pubPathLibrary.publish(laserCloudTemp);
+        pubPathLibraryValid.publish(laserCloudTemp);
     }
 };
 

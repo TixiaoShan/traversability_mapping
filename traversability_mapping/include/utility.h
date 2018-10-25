@@ -110,7 +110,7 @@ extern const int localMapArrayLength = localMapLength / mapResolution;
 
 // Visualization Params
 extern const float visualizationRadius = 50;
-extern const float visualizationFrequency = 5; // n, skip n scans then publish, n=0, visualize at each scan
+extern const float visualizationFrequency = 2; // n, skip n scans then publish, n=0, visualize at each scan
 
 // Robot Params
 extern const float robotRadius = 0.2;

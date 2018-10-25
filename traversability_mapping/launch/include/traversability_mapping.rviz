@@ -24,7 +24,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: Filtered Cloud Visual
+    SyncSource: Elevation Cloud
   - Class: rviz/Help
     Name: Help
 Visualization Manager:
@@ -137,8 +137,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 25.1122684
-        Min Value: 1.57793331
+        Max Value: 44.5852737
+        Min Value: 22.0026436
         Value: true
       Axis: X
       Channel Name: intensity
@@ -146,7 +146,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: AxisColor
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 0
       Max Intensity: 100
@@ -163,8 +163,8 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: false
-      Value: true
-    - Alpha: 1
+      Value: false
+    - Alpha: 0.75
       Autocompute Intensity Bounds: false
       Autocompute Value Bounds:
         Max Value: 0.115081742
@@ -188,7 +188,7 @@ Visualization Manager:
       Selectable: true
       Size (Pixels): 3
       Size (m): 0.100000001
-      Style: Boxes
+      Style: Squares
       Topic: /elevation_pointcloud
       Unreliable: false
       Use Fixed Frame: true
@@ -308,23 +308,21 @@ Visualization Manager:
       Unreliable: false
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /prm_path
       Name: PRM Path
       Namespaces:
-        goal: true
-        path: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /prm_graph
       Name: PRM Edge
       Namespaces:
-        edges: true
-        nodes: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
       Enabled: false
       Marker Topic: /prm_single_source_paths
@@ -332,6 +330,96 @@ Visualization Manager:
       Namespaces:
         {}
       Queue Size: 100
+      Value: false
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: -0.248442799
+        Min Value: -0.415985346
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 0; 0; 0
+      Color Transformer: FlatColor
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 0.49984771
+      Min Color: 0; 0; 0
+      Min Intensity: 0
+      Name: P-CAP Path
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 10
+      Size (m): 0.00999999978
+      Style: Points
+      Topic: /path_trajectory
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 30.9376698
+        Min Value: 18.9485264
+        Value: true
+      Axis: X
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 0; 255
+      Color Transformer: AxisColor
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 31837
+      Min Color: 0; 0; 0
+      Min Intensity: 0
+      Name: P-CAP Paths
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 5
+      Size (m): 0.00999999978
+      Style: Points
+      Topic: /path_library_valid
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 70.6737137
+        Min Value: 58.691246
+        Value: true
+      Axis: X
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 0; 255
+      Color Transformer: AxisColor
+      Decay Time: 0
+      Enabled: false
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 8400
+      Min Color: 0; 0; 0
+      Min Intensity: 0
+      Name: P-CAP Library
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 5
+      Size (m): 0.00999999978
+      Style: Points
+      Topic: /path_library_origin
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
       Value: false
   Enabled: true
   Global Options:
@@ -353,7 +441,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 31.0584812
+      Distance: 33.6406288
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -368,10 +456,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.755397916
+      Pitch: 1.56979632
       Target Frame: base_link
       Value: Orbit (rviz)
-      Yaw: 1.17539811
+      Yaw: 4.25045061
     Saved: ~
 Window Geometry:
   Displays:
