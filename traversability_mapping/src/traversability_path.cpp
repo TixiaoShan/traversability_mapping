@@ -34,8 +34,8 @@ public:
 
     bool planningFlag; // set to "true" once goal is received from move_base
 
-    const float angularVelocityMax = 0.75 / 180.0 * M_PI;
-    const float angularVelocityRes = 0.25 / 180.0 * M_PI;
+    const float angularVelocityMax = 5.0 / 180.0 * M_PI;
+    const float angularVelocityRes = 1.0 / 180.0 * M_PI;
     const float angularVelocityMax2 = 0.5 / 180.0 * M_PI;
     const float angularVelocityRes2 = 0.25 / 180.0 * M_PI;
     const float forwardVelocity = 0.1;
