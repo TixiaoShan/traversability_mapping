@@ -90,7 +90,7 @@ extern const int scanNumMax = std::max(scanNumCurbFilter, scanNumSlopeFilter);
 
 // Filter Threshold Params
 extern const float sensorRangeLimit = 12; // only keep points with in ...   
-extern const float filterHeightLimit = (urbanMapping == true) ? 0.06 : 0.1; // step diff threshold         
+extern const float filterHeightLimit = (urbanMapping == true) ? 0.1 : 0.1; // step diff threshold         
 extern const float filterAngleLimit = 20; // slope angle threshold          
 extern const int filterHeightMapArrayLength = sensorRangeLimit*2 / mapResolution;
 
@@ -113,7 +113,7 @@ extern const float visualizationRadius = 50;
 extern const float visualizationFrequency = 2; // n, skip n scans then publish, n=0, visualize at each scan
 
 // Robot Params
-extern const float robotRadius = 0.2;
+extern const float robotRadius = 0;
 extern const float sensorHeight = 0.5;
 extern const int footprintRadiusLength = int(robotRadius / mapResolution);
 

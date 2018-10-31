@@ -15,8 +15,8 @@
     <rosparam file="$(find traversability_mapping)/launch/params/move_base/move_base_params.yaml" command="load" />
     
     <param name="base_global_planner" type="string" value="tm_planner/TMPlanner" />
-    <param name="base_local_planner" value="base_local_planner/TrajectoryPlannerROS"/>
-    <!--<param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS"/>-->
+    <!--<param name="base_local_planner" value="base_local_planner/TrajectoryPlannerROS"/>-->
+    <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS"/>
     
     <remap from="odom" to="odometry/filtered" />
 
