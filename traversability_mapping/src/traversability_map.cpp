@@ -319,6 +319,8 @@ public:
         grid_t centerGrid = centerCell->grid;
         grid_t thisGrid;
 
+        int footprintRadiusLength = int(robotRadius / mapResolution);
+
         for (int k = -footprintRadiusLength; k <= footprintRadiusLength; ++k){
             for (int l = -footprintRadiusLength; l <= footprintRadiusLength; ++l){
                 // skip grids too far

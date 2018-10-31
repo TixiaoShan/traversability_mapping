@@ -113,9 +113,8 @@ extern const float visualizationRadius = 50;
 extern const float visualizationFrequency = 2; // n, skip n scans then publish, n=0, visualize at each scan
 
 // Robot Params
-extern const float robotRadius = 0;
+extern const float robotRadius = 0.2;
 extern const float sensorHeight = 0.5;
-extern const int footprintRadiusLength = int(robotRadius / mapResolution);
 
 // Traversability Params
 extern const int traversabilityObserveTimeTh = 10;
