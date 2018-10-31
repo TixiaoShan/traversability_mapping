@@ -17,8 +17,6 @@ DWAPlannerROS:
   max_rot_vel: 1.57
   min_rot_vel: -1.57 
 
-
-
   sim_time: 1.7 
   sim_granularity: 0.025 
 
@@ -32,7 +30,7 @@ DWAPlannerROS:
   scaling_speed: 0.25 
   max_scaling_factor: 0.2 
 
-  vx_samples: 20
+  vx_samples: 10
   vy_samples: 0 
   vtheta_samples: 20 
 
