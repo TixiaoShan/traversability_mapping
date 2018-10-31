@@ -128,7 +128,7 @@ extern const std::vector<int> costHierarchy(tmp, tmp+sizeof(tmp)/sizeof(int));//
 
 // PRM Planner Settings
 extern const bool planningUnknown = true;
-extern const float costmapInflationRadius = 0.3;
+extern const float costmapInflationRadius = 0.1;
 extern const float neighborSampleRadius  = 0.5;
 extern const float neighborConnectHeight = 1.0;
 extern const float neighborConnectRadius = 2.0;
