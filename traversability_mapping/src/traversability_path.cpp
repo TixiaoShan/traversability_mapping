@@ -36,7 +36,7 @@ public:
 
     const float angularVelocityMax = 5.0 / 180.0 * M_PI;
     const float angularVelocityRes = 1.0 / 180.0 * M_PI;
-    const float angularVelocityMax2 = 0.5 / 180.0 * M_PI;
+    const float angularVelocityMax2 = 1.0 / 180.0 * M_PI;
     const float angularVelocityRes2 = 0.25 / 180.0 * M_PI;
     const float forwardVelocity = 0.1;
     const float deltaTime = 1;
