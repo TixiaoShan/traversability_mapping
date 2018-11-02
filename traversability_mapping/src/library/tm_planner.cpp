@@ -65,16 +65,7 @@ namespace tm_planner {
 		// 3. Extract Path
 		geometry_msgs::PoseStamped this_pos = goal;
 		for (int i = 0; i < globalPath.poses.size(); ++i){
-			//  x - y - z 
-			this_pos.pose.position.x = globalPath.poses[i].pose.position.x;
-			this_pos.pose.position.y = globalPath.poses[i].pose.position.y;
-			this_pos.pose.position.z = globalPath.poses[i].pose.position.z;
-			// quaternions
-			this_pos.pose.orientation.x = globalPath.poses[i].pose.orientation.x;
-			this_pos.pose.orientation.y = globalPath.poses[i].pose.orientation.y;
-			this_pos.pose.orientation.z = globalPath.poses[i].pose.orientation.z;
-			this_pos.pose.orientation.w = globalPath.poses[i].pose.orientation.w;
-
+			this_pos = globalPath.poses[i];
 			plan.push_back(this_pos);
 		}
 

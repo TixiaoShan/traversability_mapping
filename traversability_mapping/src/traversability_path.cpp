@@ -34,9 +34,9 @@ public:
 
     bool planningFlag; // set to "true" once goal is received from move_base
 
-    const float angularVelocityMax = 5.0 / 180.0 * M_PI;
-    const float angularVelocityRes = 1.0 / 180.0 * M_PI;
-    const float angularVelocityMax2 = 1.0 / 180.0 * M_PI;
+    const float angularVelocityMax = 7.0 / 180.0 * M_PI;
+    const float angularVelocityRes = 0.5 / 180.0 * M_PI;
+    const float angularVelocityMax2 = 0.5 / 180.0 * M_PI;
     const float angularVelocityRes2 = 0.25 / 180.0 * M_PI;
     const float forwardVelocity = 0.1;
     const float deltaTime = 1;
@@ -56,6 +56,9 @@ public:
     pcl::PointCloud<PointType>::Ptr pathCloud;
 
     pcl::KdTreeFLANN<PointType>::Ptr kdTreeFromCloud;
+
+    state_t *rootState;
+    state_t *goalState;
 
     TraversabilityPath():
         nh("~"),
@@ -77,12 +80,15 @@ public:
 
         kdTreeFromCloud.reset(new pcl::KdTreeFLANN<PointType>());
 
+        rootState = new state_t;
+        goalState = new state_t;
+
         createPathLibrary();
     }
 
     void createPathLibrary(){
         // add root node
-        state_t *rootState = new state_t;
+        
 
         rootState->x[0] = 0;
         rootState->x[1] = 0;
@@ -122,7 +128,7 @@ public:
             currentAngVelRes = angularVelocityRes2;
         }
 
-        for (float vTheta = -currentAngVelMax; vTheta <= currentAngVelMax; vTheta += currentAngVelRes){
+        for (float vTheta = -currentAngVelMax; vTheta <= currentAngVelMax + 1e-6; vTheta += currentAngVelRes){
 
             state_t *previousState = parentState;
 
@@ -172,6 +178,10 @@ public:
         goalPoint.x = goal->pose.position.x;
         goalPoint.y = goal->pose.position.y;
         goalPoint.z = goal->pose.position.z;
+
+        goalState->x[0] = goalPoint.x;
+        goalState->x[1] = goalPoint.y;
+        goalState->x[2] = goalPoint.z;
         
         // start planning
         planningFlag = true;
@@ -290,7 +300,7 @@ public:
         std::vector<float> pointSearchSqDis;
         kdTreeFromCloud->setInputCloud(pathCloudValid);
 
-        double radius = 1.0; // search radius
+        double radius = 0.3; // search radius
         kdTreeFromCloud->radiusSearch(goalPoint, radius, pointSearchInd, pointSearchSqDis, 0);
 
         if (pointSearchInd.size() == 0)
