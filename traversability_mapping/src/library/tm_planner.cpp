@@ -16,27 +16,26 @@ namespace tm_planner {
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	// Initialize the Plugin
 	void TMPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros){
-
 		// initialize subscriptions
 		subPath = nh.subscribe("/global_path", 1, &TMPlanner::pathHandler, this);
 		pubGoal = nh.advertise<geometry_msgs::PoseStamped>("/prm_goal", 2);
 		// visualize twist command
-		subTwistCommand = nh.subscribe<nav_msgs::Path>("/move_base/TrajectoryPlannerROS/local_plan", 1, &TMPlanner::twistCommandHandler, this);
+		subTwistCommand1 = nh.subscribe<nav_msgs::Path>("/move_base/TrajectoryPlannerROS/local_plan", 1, &TMPlanner::twistCommandHandler, this);
+		subTwistCommand2 = nh.subscribe<nav_msgs::Path>("/move_base/DWAPlannerROS/local_plan", 1, &TMPlanner::twistCommandHandler, this);
+		// Publisher
         pubTwistCommand = nh.advertise<nav_msgs::Path>("/twist_command", 1);
-
-		ROS_INFO("----> Traversability Plugin Started.");
 	}
 
 	// visualize twist command
 	void TMPlanner::twistCommandHandler(const nav_msgs::Path::ConstPtr& pathMsg){
 
 		try{ listener.lookupTransform("map","base_link", ros::Time(0), transform); } 
-        catch (tf::TransformException ex){ /*ROS_ERROR("Transfrom Failure.");*/ return; }
+        catch (tf::TransformException ex){ return; }
 
         nav_msgs::Path outTwist = *pathMsg;
 
         for (int i = 0; i < outTwist.poses.size(); ++i)
-            outTwist.poses[i].pose.position.z = transform.getOrigin().z() + 1.5;
+            outTwist.poses[i].pose.position.z = transform.getOrigin().z() + 1.0;
 
         pubTwistCommand.publish(outTwist);
     }

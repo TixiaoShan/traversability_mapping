@@ -18,7 +18,8 @@ namespace tm_planner {
         ros::Publisher pubGoal;
 
         // visualize twist command
-        ros::Subscriber subTwistCommand; // twist command from move_base
+        ros::Subscriber subTwistCommand1; // twist command from move_base
+        ros::Subscriber subTwistCommand2; // twist command from move_base
         ros::Publisher pubTwistCommand; // adjust twist command height to show above the robot
 
         nav_msgs::Path globalPath;
