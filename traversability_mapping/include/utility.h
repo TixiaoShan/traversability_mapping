@@ -70,7 +70,7 @@ typedef struct kdtree kdtree_t;
 typedef struct kdres kdres_t;
 
 // Environment
-extern const bool urbanMapping = true;
+extern const bool urbanMapping = false;
 
 // VLP-16
 extern const int N_SCAN = 16;
@@ -90,7 +90,7 @@ extern const int scanNumMax = std::max(scanNumCurbFilter, scanNumSlopeFilter);
 
 // Filter Threshold Params
 extern const float sensorRangeLimit = 12; // only keep points with in ...   
-extern const float filterHeightLimit = (urbanMapping == true) ? 0.1 : 0.1; // step diff threshold         
+extern const float filterHeightLimit = (urbanMapping == true) ? 0.1 : 0.15; // step diff threshold         
 extern const float filterAngleLimit = 20; // slope angle threshold          
 extern const int filterHeightMapArrayLength = sensorRangeLimit*2 / mapResolution;
 
