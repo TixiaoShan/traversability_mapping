@@ -88,8 +88,6 @@ public:
 
     void createPathLibrary(){
         // add root node
-        
-
         rootState->x[0] = 0;
         rootState->x[1] = 0;
         rootState->x[2] = 0;
