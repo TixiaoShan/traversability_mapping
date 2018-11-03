@@ -60,17 +60,17 @@ public:
         goalState = new state_t;
         mapCenter = new state_t;
 
-        subGoal = nh.subscribe<geometry_msgs::PoseStamped>("/prm_goal", 1, &TraversabilityPRM::goalPosHandler, this);
-        subElevationMap = nh.subscribe<elevation_msgs::OccupancyElevation>("/occupancy_map_local_height", 1, &TraversabilityPRM::elevationMapHandler, this);     
+        subGoal = nh.subscribe<geometry_msgs::PoseStamped>("/prm_goal", 5, &TraversabilityPRM::goalPosHandler, this);
+        subElevationMap = nh.subscribe<elevation_msgs::OccupancyElevation>("/occupancy_map_local_height", 5, &TraversabilityPRM::elevationMapHandler, this);     
 
-        pubPRMGraph = nh.advertise<visualization_msgs::MarkerArray>("/prm_graph", 1);
-        pubPRMPath = nh.advertise<visualization_msgs::MarkerArray>("/prm_path", 1);
-        pubSingleSourcePaths = nh.advertise<visualization_msgs::MarkerArray>("/prm_single_source_paths", 1);
+        pubPRMGraph = nh.advertise<visualization_msgs::MarkerArray>("/prm_graph", 5);
+        pubPRMPath = nh.advertise<visualization_msgs::MarkerArray>("/prm_path", 5);
+        pubSingleSourcePaths = nh.advertise<visualization_msgs::MarkerArray>("/prm_single_source_paths", 5);
 
-        pubCloudPRMNodes = nh.advertise<sensor_msgs::PointCloud2>("/prm_cloud_nodes", 1);
-        pubCloudPRMGraph = nh.advertise<sensor_msgs::PointCloud2>("/prm_cloud_graph", 1);
+        pubCloudPRMNodes = nh.advertise<sensor_msgs::PointCloud2>("/prm_cloud_nodes", 5);
+        pubCloudPRMGraph = nh.advertise<sensor_msgs::PointCloud2>("/prm_cloud_graph", 5);
 
-        pubGlobalPath = nh.advertise<nav_msgs::Path>("/global_path", 1);
+        pubGlobalPath = nh.advertise<nav_msgs::Path>("/global_path", 5);
 
         allocateMemory(); 
     }

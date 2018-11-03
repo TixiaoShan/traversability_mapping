@@ -64,14 +64,14 @@ public:
         nh("~"),
         planningFlag(false){
 
-        pubGlobalPath = nh.advertise<nav_msgs::Path>("/global_path", 1);
+        pubGlobalPath = nh.advertise<nav_msgs::Path>("/global_path", 5);
 
-        pubPathCloud = nh.advertise<sensor_msgs::PointCloud2>("/path_trajectory", 1);
-        pubPathLibraryValid = nh.advertise<sensor_msgs::PointCloud2>("/path_library_valid", 1);
-        pubPathLibraryOrigin = nh.advertise<sensor_msgs::PointCloud2>("/path_library_origin", 1);
+        pubPathCloud = nh.advertise<sensor_msgs::PointCloud2>("/path_trajectory", 5);
+        pubPathLibraryValid = nh.advertise<sensor_msgs::PointCloud2>("/path_library_valid", 5);
+        pubPathLibraryOrigin = nh.advertise<sensor_msgs::PointCloud2>("/path_library_origin", 5);
 
-        subGoal = nh.subscribe<geometry_msgs::PoseStamped>("/prm_goal", 1, &TraversabilityPath::goalPosHandler, this);
-        subElevationMap = nh.subscribe<elevation_msgs::OccupancyElevation>("/occupancy_map_local_height", 1, &TraversabilityPath::elevationMapHandler, this);  
+        subGoal = nh.subscribe<geometry_msgs::PoseStamped>("/prm_goal", 5, &TraversabilityPath::goalPosHandler, this);
+        subElevationMap = nh.subscribe<elevation_msgs::OccupancyElevation>("/occupancy_map_local_height", 5, &TraversabilityPath::elevationMapHandler, this);  
 
         pathCloud.reset(new pcl::PointCloud<PointType>());
         pathCloudLocal.reset(new pcl::PointCloud<PointType>());

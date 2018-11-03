@@ -40,11 +40,11 @@ public:
     TraversabilityFilter():
         nh("~"){
 
-        subCloud = nh.subscribe<sensor_msgs::PointCloud2>("/full_cloud_info", 1, &TraversabilityFilter::cloudHandler, this);
+        subCloud = nh.subscribe<sensor_msgs::PointCloud2>("/full_cloud_info", 5, &TraversabilityFilter::cloudHandler, this);
 
-        pubCloud = nh.advertise<sensor_msgs::PointCloud2> ("/filtered_pointcloud", 1);
-        pubCloudVisual = nh.advertise<sensor_msgs::PointCloud2> ("/filtered_pointcloud_visual", 1);
-        pubLaserScan = nh.advertise<sensor_msgs::LaserScan> ("/pointcloud_2_laserscan", 1);  
+        pubCloud = nh.advertise<sensor_msgs::PointCloud2> ("/filtered_pointcloud", 5);
+        pubCloudVisual = nh.advertise<sensor_msgs::PointCloud2> ("/filtered_pointcloud_visual", 5);
+        pubLaserScan = nh.advertise<sensor_msgs::LaserScan> ("/pointcloud_2_laserscan", 5);  
 
         allocateMemory();
 

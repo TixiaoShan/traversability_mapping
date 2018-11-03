@@ -17,13 +17,13 @@ namespace tm_planner {
 	// Initialize the Plugin
 	void TMPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros){
 		// initialize subscriptions
-		subPath = nh.subscribe("/global_path", 1, &TMPlanner::pathHandler, this);
-		pubGoal = nh.advertise<geometry_msgs::PoseStamped>("/prm_goal", 2);
+		subPath = nh.subscribe("/global_path", 5, &TMPlanner::pathHandler, this);
+		pubGoal = nh.advertise<geometry_msgs::PoseStamped>("/prm_goal", 5);
 		// visualize twist command
-		subTwistCommand1 = nh.subscribe<nav_msgs::Path>("/move_base/TrajectoryPlannerROS/local_plan", 1, &TMPlanner::twistCommandHandler, this);
-		subTwistCommand2 = nh.subscribe<nav_msgs::Path>("/move_base/DWAPlannerROS/local_plan", 1, &TMPlanner::twistCommandHandler, this);
+		subTwistCommand1 = nh.subscribe<nav_msgs::Path>("/move_base/TrajectoryPlannerROS/local_plan", 5, &TMPlanner::twistCommandHandler, this);
+		subTwistCommand2 = nh.subscribe<nav_msgs::Path>("/move_base/DWAPlannerROS/local_plan", 5, &TMPlanner::twistCommandHandler, this);
 		// Publisher
-        pubTwistCommand = nh.advertise<nav_msgs::Path>("/twist_command", 1);
+        pubTwistCommand = nh.advertise<nav_msgs::Path>("/twist_command", 5);
 	}
 
 	// visualize twist command
