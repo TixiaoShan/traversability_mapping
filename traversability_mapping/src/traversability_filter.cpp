@@ -10,7 +10,8 @@ private:
     ros::Subscriber subCloud;
     // ROS publisher
     ros::Publisher pubCloud;
-    ros::Publisher pubCloudVisual;
+    ros::Publisher pubCloudVisualHiRes;
+    ros::Publisher pubCloudVisualLowRes;
     ros::Publisher pubLaserScan;
     // Point Cloud
     pcl::PointCloud<PointType>::Ptr laserCloudIn; // projected full velodyne cloud
@@ -43,7 +44,8 @@ public:
         subCloud = nh.subscribe<sensor_msgs::PointCloud2>("/full_cloud_info", 5, &TraversabilityFilter::cloudHandler, this);
 
         pubCloud = nh.advertise<sensor_msgs::PointCloud2> ("/filtered_pointcloud", 5);
-        pubCloudVisual = nh.advertise<sensor_msgs::PointCloud2> ("/filtered_pointcloud_visual", 5);
+        pubCloudVisualHiRes = nh.advertise<sensor_msgs::PointCloud2> ("/filtered_pointcloud_visual_high_res", 5);
+        pubCloudVisualLowRes = nh.advertise<sensor_msgs::PointCloud2> ("/filtered_pointcloud_visual_low_res", 5);
         pubLaserScan = nh.advertise<sensor_msgs::LaserScan> ("/pointcloud_2_laserscan", 5);  
 
         allocateMemory();
@@ -209,12 +211,12 @@ public:
         //     }
         // }
 
-        // if (pubCloudVisual.getNumSubscribers() != 0){
+        // if (pubCloudVisualHiRes.getNumSubscribers() != 0){
         //     sensor_msgs::PointCloud2 laserCloudTemp;
         //     pcl::toROSMsg(*laserCloudIn, laserCloudTemp);
         //     laserCloudTemp.header.stamp = ros::Time::now();
         //     laserCloudTemp.header.frame_id = "base_link";
-        //     pubCloudVisual.publish(laserCloudTemp);
+        //     pubCloudVisualHiRes.publish(laserCloudTemp);
         // }
     }
 
@@ -389,12 +391,12 @@ public:
         }
 
         // Publish laserCloudOut for visualization (before downsample and BGK prediction)
-        if (pubCloudVisual.getNumSubscribers() != 0){
+        if (pubCloudVisualHiRes.getNumSubscribers() != 0){
             sensor_msgs::PointCloud2 laserCloudTemp;
             pcl::toROSMsg(*laserCloudOut, laserCloudTemp);
             laserCloudTemp.header.stamp = ros::Time::now();
             laserCloudTemp.header.frame_id = "map";
-            pubCloudVisual.publish(laserCloudTemp);
+            pubCloudVisualHiRes.publish(laserCloudTemp);
         }
     }
 
@@ -454,6 +456,15 @@ public:
         }
 
         *laserCloudOut = *laserCloudTemp;
+
+        // Publish laserCloudOut for visualization (after downsample but beforeBGK prediction)
+        if (pubCloudVisualLowRes.getNumSubscribers() != 0){
+            sensor_msgs::PointCloud2 laserCloudTemp;
+            pcl::toROSMsg(*laserCloudOut, laserCloudTemp);
+            laserCloudTemp.header.stamp = ros::Time::now();
+            laserCloudTemp.header.frame_id = "map";
+            pubCloudVisualLowRes.publish(laserCloudTemp);
+        }
     }
 
     void predictCloudBGK(){
@@ -594,7 +605,8 @@ public:
             float range = std::sqrt(x*x + y*y);
             float angle = std::atan2(y, x);
             int index = (angle - laserScan.angle_min) / laserScan.angle_increment;
-            laserScan.ranges[index] = std::min(laserScan.ranges[index], range);
+            if (index >= 0 && index < laserScan.ranges.size())
+                laserScan.ranges[index] = std::min(laserScan.ranges[index], range);
         } 
     }
 
