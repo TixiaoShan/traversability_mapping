@@ -294,10 +294,10 @@ public:
             }
 
             // find slope
-            // Eigen::MatrixXf centered = matPoints.rowwise() - matPoints.colwise().mean();
-            // Eigen::MatrixXf cov = (centered.adjoint() * centered);
-            // cv::eigen2cv(cov, matCov); // copy data from eigen to cv::Mat
-            // cv::eigen(matCov, matEig, matVec); // find eigenvalues and eigenvectors for the covariance matrix
+            Eigen::MatrixXf centered = matPoints.rowwise() - matPoints.colwise().mean();
+            Eigen::MatrixXf cov = (centered.adjoint() * centered);
+            cv::eigen2cv(cov, matCov); // copy data from eigen to cv::Mat
+            cv::eigen(matCov, matEig, matVec); // find eigenvalues and eigenvectors for the covariance matrix
 
             // float slopeAngle = std::acos(std::abs(matVec.at<float>(2, 2))) / M_PI * 180;
             // // float occupancy = 1.0f / (1.0f + exp(-(slopeAngle - filterAngleLimit)));
