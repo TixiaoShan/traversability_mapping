@@ -31,10 +31,10 @@ private:
     // laser scan message
     sensor_msgs::LaserScan laserScan;
     // for downsample
-    float **minHeight;
-    float **maxHeight;
-    bool **obstFlag;
-    bool **initFlag;
+    Eigen::MatrixXf minHeight;
+    Eigen::MatrixXf maxHeight;
+    Eigen::MatrixXi obstFlag;
+    Eigen::MatrixXi initFlag;
 
 
 public:
@@ -66,9 +66,10 @@ public:
         for (int i = 0; i < N_SCAN; ++i)
             laserCloudMatrix[i].resize(Horizon_SCAN);
 
-        initFlag = new bool*[filterHeightMapArrayLength];
-        for (int i = 0; i < filterHeightMapArrayLength; ++i)
-            initFlag[i] = new bool[filterHeightMapArrayLength];
+        initFlag = Eigen::MatrixXi::Zero(filterHeightMapArrayLength, filterHeightMapArrayLength);
+        obstFlag = Eigen::MatrixXi::Zero(filterHeightMapArrayLength, filterHeightMapArrayLength);
+        minHeight = Eigen::MatrixXf::Zero(filterHeightMapArrayLength, filterHeightMapArrayLength);
+        maxHeight = Eigen::MatrixXf::Zero(filterHeightMapArrayLength, filterHeightMapArrayLength);
 
         obstFlag = new bool*[filterHeightMapArrayLength];
         for (int i = 0; i < filterHeightMapArrayLength; ++i)
@@ -94,11 +95,9 @@ public:
         obstacleMatrix = cv::Mat(N_SCAN, Horizon_SCAN, CV_32S, cv::Scalar::all(-1));
         rangeMatrix =  cv::Mat(N_SCAN, Horizon_SCAN, CV_32F, cv::Scalar::all(-1));
 
-        for (int i = 0; i < filterHeightMapArrayLength; ++i){
-            for (int j = 0; j < filterHeightMapArrayLength; ++j){
-                initFlag[i][j] = false;
-                obstFlag[i][j] = false;
-            }
+        initFlag = Eigen::MatrixXi::Zero(filterHeightMapArrayLength, filterHeightMapArrayLength);
+        obstFlag = Eigen::MatrixXi::Zero(filterHeightMapArrayLength, filterHeightMapArrayLength);
+    }
         }
     }
 
@@ -419,15 +418,15 @@ public:
                 continue;
             // obstacle point (decided by curb or slope filter)
             if (laserCloudOut->points[i].intensity == 100)
-                obstFlag[idx][idy] = true;
+                obstFlag(idx, idy) = true;
             // save min and max height of a grid
-            if (initFlag[idx][idy] == false){
-                minHeight[idx][idy] = laserCloudOut->points[i].z;
-                maxHeight[idx][idy] = laserCloudOut->points[i].z;
-                initFlag[idx][idy] = true;
+            if (initFlag(idx, idy) == false){
+                minHeight(idx, idy) = laserCloudOut->points[i].z;
+                maxHeight(idx, idy) = laserCloudOut->points[i].z;
+                initFlag(idx, idy) = true;
             } else {
-                minHeight[idx][idy] = std::min(minHeight[idx][idy], laserCloudOut->points[i].z);
-                maxHeight[idx][idy] = std::max(maxHeight[idx][idy], laserCloudOut->points[i].z);
+                minHeight(idx, idy) = std::min(minHeight(idx, idy), laserCloudOut->points[i].z);
+                maxHeight(idx, idy) = std::max(maxHeight(idx, idy), laserCloudOut->points[i].z);
             }
         }
         // intermediate cloud
@@ -436,16 +435,16 @@ public:
         for (int i = 0; i < filterHeightMapArrayLength; ++i){
             for (int j = 0; j < filterHeightMapArrayLength; ++j){
                 // no point at this grid
-                if (initFlag[i][j] == false)
+                if (initFlag(i, j) == false)
                     continue;
                 // convert grid to point
                 PointType thisPoint;
                 thisPoint.x = localMapOrigin.x + i * mapResolution + mapResolution / 2.0;
                 thisPoint.y = localMapOrigin.y + j * mapResolution + mapResolution / 2.0;
-                thisPoint.z = maxHeight[i][j];
+                thisPoint.z = maxHeight(i, j);
 
-                if (obstFlag[i][j] == true || maxHeight[i][j] - minHeight[i][j] > filterHeightLimit){
-                    obstFlag[i][j] = true;
+                if (obstFlag(i, j) == true || maxHeight(i, j) - minHeight(i, j) > filterHeightLimit){
+                    obstFlag(i, j) = true;
                     thisPoint.intensity = 100; // obstacle
                     laserCloudTemp->push_back(thisPoint);
                 }else{
@@ -477,7 +476,7 @@ public:
         for (int i = 0; i < filterHeightMapArrayLength; ++i){
             for (int j = 0; j < filterHeightMapArrayLength; ++j){
                 // skip observed point
-                if (initFlag[i][j] == true)
+                if (initFlag(i, j) == true)
                     continue;
                 PointType testPoint;
                 testPoint.x = localMapOrigin.x + i * mapResolution + mapResolution / 2.0;
@@ -502,11 +501,11 @@ public:
                         if (idx < 0 || idy < 0 || idx >= filterHeightMapArrayLength || idy >= filterHeightMapArrayLength)
                             continue;
                         // save only observed grid in this scan
-                        if (initFlag[idx][idy] == true){
+                        if (initFlag(idx, idy) == true){
                             xTrainVec.push_back(localMapOrigin.x + idx * mapResolution + mapResolution / 2.0);
                             xTrainVec.push_back(localMapOrigin.y + idy * mapResolution + mapResolution / 2.0);
-                            yTrainVecElev.push_back(maxHeight[idx][idy]);
-                            yTrainVecOccu.push_back(obstFlag[idx][idy] == true ? 1 : 0);
+                            yTrainVecElev.push_back(maxHeight(idx, idy));
+                            yTrainVecOccu.push_back(obstFlag(idx, idy) == true ? 1 : 0);
                         }
                     }
                 }
