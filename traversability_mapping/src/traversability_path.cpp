@@ -34,13 +34,15 @@ public:
 
     bool planningFlag; // set to "true" once goal is received from move_base
 
-    const float angularVelocityMax = 7.0 / 180.0 * M_PI;
-    const float angularVelocityRes = 0.5 / 180.0 * M_PI;
-    const float angularVelocityMax2 = 0.5 / 180.0 * M_PI;
-    const float angularVelocityRes2 = 0.25 / 180.0 * M_PI;
-    const float forwardVelocity = 0.1;
-    const float deltaTime = 1;
-    const int simTime = 30;
+    float angularVelocityMax = 7 / 180.0 * M_PI;
+    float angularVelocityRes = 0.5 / 180.0 * M_PI;
+    float angularVelocityMax2 = 0.5 / 180.0 * M_PI;
+    float angularVelocityRes2 = 0.25 / 180.0 * M_PI;
+    float forwardVelocity = 0.1;
+    float deltaTime = 1;
+    int simTime = 30;
+    float endPointResolution = -1;
+    int numInPlaceRotation = 1;
 
     int stateListSize;
     vector<state_t*> stateList;
@@ -214,46 +216,94 @@ public:
         }
     }
 
+    bool transformPointCloud(const std::string &target_frame, const pcl::PointCloud<PointType> &in,
+                        pcl::PointCloud<PointType> &out, const tf::TransformListener &tf_listener, float yaw = 0.0f) {
+      if (in.header.frame_id == target_frame) {
+        out = in;
+        return (true);
+      }
+
+      // Get the TF transform
+      tf::StampedTransform transform;
+      try {
+        tf_listener.lookupTransform(target_frame, in.header.frame_id, ros::Time(0), transform);
+      } catch (tf::LookupException &e) {
+        ROS_ERROR("%s", e.what());
+        return (false);
+      } catch (tf::ExtrapolationException &e) {
+        ROS_ERROR("%s", e.what());
+        return (false);
+      }
+
+      tf::Quaternion R;
+      R.setRPY(0, 0, yaw);
+      transform *= tf::Transform(R);
+      pcl_ros::transformPointCloud(in, out, transform);
+
+      out.header.frame_id = target_frame;
+      return (true);
+    }
+
     void updatePathLibrary(){
-
-        // 1. Reset valid flag
-        for (int i = 0; i < stateListSize; ++i){
-            stateList[i]->validFlag = true;
-        }
-
-        // 2. Transform local paths to global paths
-        try{listener.lookupTransform("map","base_link", ros::Time(0), transform); } 
-        catch (tf::TransformException ex){ /*ROS_ERROR("Transfrom Failure.");*/ return; }
-
-        pathCloudLocal->header.frame_id = "base_link";
-        pathCloudLocal->header.stamp = 0; // don't use the latest time, we don't have that transform in the queue yet
-
-        pcl_ros::transformPointCloud("map", *pathCloudLocal, *pathCloudGlobal, listener);
-
-        // 3. Collision check
-        state_t *state = new state_t;
-        for (int i = 0; i < stateListSize; ++i){
-
-            if (stateList[i]->validFlag == false)
-                continue;
-            state->x[0] = pathCloudGlobal->points[i].x;
-            state->x[1] = pathCloudGlobal->points[i].y;
-            state->x[2] = pathCloudGlobal->points[i].z;
-
-            if (isIncollision(state) == true){
-                markInvalidState(stateList[i]);
-            }
-        }
-
-        delete state;
-
-        // 4. extract valid states
         pathCloudValid->clear();
-        for (int i = 0; i < stateListSize; ++i){
-            if (stateList[i]->validFlag == false)
-                continue;
-            // updateHeight(&pathCloudGlobal->points[i]);
-            pathCloudValid->push_back(pathCloudGlobal->points[i]);
+        std::vector<PointType> ends;
+        for (int rot = 0; rot < numInPlaceRotation; ++rot) {
+            // 1. Reset valid flag
+            for (int i = 0; i < stateListSize; ++i){
+                stateList[i]->validFlag = true;
+                stateList[i]->end = stateList[i]->childList.empty();
+            }
+
+            // 2. Transform local paths to global paths
+            try{listener.lookupTransform("map","base_link", ros::Time(0), transform); } 
+            catch (tf::TransformException ex){ /*ROS_ERROR("Transfrom Failure.");*/ return; }
+
+            pathCloudLocal->header.frame_id = "base_link";
+            pathCloudLocal->header.stamp = 0; // don't use the latest time, we don't have that transform in the queue yet
+            // pcl_ros::transformPointCloud("map", *pathCloudLocal, *pathCloudGlobal, listener);
+            transformPointCloud("map", *pathCloudLocal, *pathCloudGlobal, listener, M_PI / 2.0 * rot);
+
+            // 3. Collision check
+            state_t *state = new state_t;
+            for (int i = 0; i < stateListSize; ++i){
+
+                if (stateList[i]->validFlag == false)
+                    continue;
+                state->x[0] = pathCloudGlobal->points[i].x;
+                state->x[1] = pathCloudGlobal->points[i].y;
+                state->x[2] = pathCloudGlobal->points[i].z;
+
+                if (isIncollision(state) == true){
+                    if (state->parentState)
+                        state->parentState->end = true;
+                    markInvalidState(stateList[i]);
+                }
+            }
+
+            delete state;
+
+            // 4. Extract valid states and downsample
+            for (int i = 0; i < stateListSize; ++i){
+                state_t *s = stateList[i];
+                if (!s->validFlag || !s->end)
+                    continue;
+                
+                if (endPointResolution > 0) {
+                    for (const PointType &end_point : ends) {
+                        if (pointDistance(end_point, pathCloudGlobal->points[i]) < endPointResolution) {
+                            s = NULL;
+                            break;
+                        }
+                    }
+                    if (!s) continue;
+                    ends.push_back(pathCloudGlobal->points[s->stateId]);
+                }
+
+                while (s) {
+                    pathCloudValid->push_back(pathCloudGlobal->points[s->stateId]);
+                    s = s->parentState;
+                }
+            }
         }
 
         // 5. Visualize valid states (or paths)
@@ -411,8 +461,19 @@ public:
 int main(int argc, char** argv){
 
     ros::init(argc, argv, "traversability_mapping");
+    ros::NodeHandle nh("~");
     
     TraversabilityPath tPath;
+
+    nh.param<float>("angularVelocityMax", tPath.angularVelocityMax, 5); tPath.angularVelocityMax *= M_PI / 180.0;
+    nh.param<float>("angularVelocityRes", tPath.angularVelocityRes, 1); tPath.angularVelocityRes *= M_PI / 180.0;
+    nh.param<float>("angularVelocityMax2", tPath.angularVelocityMax2, 2); tPath.angularVelocityMax2 *= M_PI / 180.0;
+    nh.param<float>("angularVelocityRes2", tPath.angularVelocityRes2, 0.5); tPath.angularVelocityRes2 *= M_PI / 180.0;
+    nh.param<float>("forwardVelocity", tPath.forwardVelocity, 0.1);
+    nh.param<int>("simTime", tPath.simTime, 30);
+
+    nh.param<int>("numInPlaceRotation", tPath.numInPlaceRotation, 1);
+    nh.param<float>("endPointResolution", tPath.endPointResolution, -1);
 
     ROS_INFO("\033[1;32m---->\033[0m Traversability Planner Started.");
 
