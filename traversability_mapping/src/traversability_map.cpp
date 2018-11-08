@@ -28,8 +28,8 @@ private:
     
     // Map Arrays
     int mapArrayCount;
-    int **mapArrayInd; // it saves the index of this submap in vector mapArray
-    int **predictionArrayFlag;
+    Eigen::MatrixXi mapArrayInd; // it saves the index of this submap in vector mapArray
+    Eigen::MatrixXi predictionArrayFlag;
     vector<childMap_t*> mapArray;
 
     // Local Map Extraction
@@ -60,7 +60,17 @@ public:
         allocateMemory(); 
     }
 
-    ~TraversabilityMapping(){}
+    ~TraversabilityMapping(){
+        for (int i = 0; i < mapArray.size(); ++i) {
+            delete mapArray[i];
+        }
+        for (int i = 0; i < observingList1.size(); ++i) {
+            delete observingList1[i];
+        }
+        for (int i = 0; i < observingList2.size(); ++i) {
+            delete observingList2[i];
+        }
+    }
 
     
 
@@ -70,22 +80,10 @@ public:
         laserCloudElevation.reset(new pcl::PointCloud<PointType>());
         
         // initialize array for cmap
-        mapArrayInd = new int*[mapArrayLength];
-        for (int i = 0; i < mapArrayLength; ++i)
-            mapArrayInd[i] = new int[mapArrayLength];
-
-        for (int i = 0; i < mapArrayLength; ++i)
-            for (int j = 0; j < mapArrayLength; ++j)
-                mapArrayInd[i][j] = -1;
+        mapArrayInd = Eigen::MatrixXi::Ones(mapArrayLength, mapArrayLength) * -1;
 
         // initialize array for predicting elevation sub-maps
-        predictionArrayFlag = new int*[mapArrayLength];
-        for (int i = 0; i < mapArrayLength; ++i)
-            predictionArrayFlag[i] = new int[mapArrayLength];
-
-        for (int i = 0; i < mapArrayLength; ++i)
-            for (int j = 0; j < mapArrayLength; ++j)
-                predictionArrayFlag[i][j] = false;
+        predictionArrayFlag = Eigen::MatrixXi::Zero(mapArrayLength, mapArrayLength);
 
         // Matrix Initialization
         matCov = cv::Mat (3, 3, CV_32F, cv::Scalar::all(0));
@@ -192,7 +190,7 @@ public:
     }
 
     mapCell_t* grid2Cell(grid_t *thisGrid){
-        return mapArray[mapArrayInd[thisGrid->cubeX][thisGrid->cubeY]]->cellArray[thisGrid->gridX][thisGrid->gridY];
+        return mapArray[mapArrayInd(thisGrid->cubeX, thisGrid->cubeY)]->cellArray[thisGrid->gridX][thisGrid->gridY];
     }
 
     bool findPointGridInMap(grid_t *gridOut, PointType *point){
@@ -204,10 +202,10 @@ public:
             thisGrid.cubeY >= 0 && thisGrid.cubeY < mapArrayLength){
             // Point is in the boundary, but this sub-map is not allocated before
             // Allocate new memory for this sub-map and save it to mapArray
-            if (mapArrayInd[thisGrid.cubeX][thisGrid.cubeY] == -1){
+            if (mapArrayInd(thisGrid.cubeX, thisGrid.cubeY) == -1){
                 childMap_t *thisChildMap = new childMap_t(mapArrayCount, thisGrid.cubeX, thisGrid.cubeY);
                 mapArray.push_back(thisChildMap);
-                mapArrayInd[thisGrid.cubeX][thisGrid.cubeY] = mapArrayCount;
+                mapArrayInd(thisGrid.cubeX, thisGrid.cubeY) = mapArrayCount;
                 ++mapArrayCount;
             }
         }else{
@@ -216,7 +214,7 @@ public:
             return false;
         }
         // sub-map id
-        thisGrid.mapID = mapArrayInd[thisGrid.cubeX][thisGrid.cubeY];
+        thisGrid.mapID = mapArrayInd(thisGrid.cubeX, thisGrid.cubeY);
         // Find the index for this point in this sub-map (grid index)
         thisGrid.gridX = (int)((point->x - mapArray[thisGrid.mapID]->originX) / mapResolution);
         thisGrid.gridY = (int)((point->y - mapArray[thisGrid.mapID]->originY) / mapResolution);
@@ -337,7 +335,7 @@ public:
                 if(thisGrid.gridY < 0){ --thisGrid.cubeY; thisGrid.gridY = thisGrid.gridY + mapCubeArrayLength;
                 }else if(thisGrid.gridY >= mapCubeArrayLength){ ++thisGrid.cubeY; thisGrid.gridY = thisGrid.gridY - mapCubeArrayLength; }
                 // If the sub-map that the checked grid belongs to is empty or not
-                int mapInd = mapArrayInd[thisGrid.cubeX][thisGrid.cubeY];
+                int mapInd = mapArrayInd(thisGrid.cubeX, thisGrid.cubeY);
                 if (mapInd == -1) continue;
                 // the neighbor cell
                 mapCell_t *thisCell = grid2Cell(&thisGrid);
@@ -418,7 +416,7 @@ public:
                 thisGrid.gridY = indY % mapCubeArrayLength;
 
                 // if sub-map is not created yet
-                if (mapArrayInd[thisGrid.cubeX][thisGrid.cubeY] == -1) {
+                if (mapArrayInd(thisGrid.cubeX, thisGrid.cubeY) == -1) {
                     continue;
                 }
                 
@@ -489,9 +487,9 @@ public:
 
                 if (idx < 0 || idx >= mapArrayLength ||  idy < 0 || idy >= mapArrayLength) continue;
 
-                if (mapArrayInd[idx][idy] == -1) continue;
+                if (mapArrayInd(idx, idy) == -1) continue;
 
-                *laserCloudElevation += mapArray[mapArrayInd[idx][idy]]->cloud;
+                *laserCloudElevation += mapArray[mapArrayInd(idx, idy)]->cloud;
             }
         }
         // 3. Publish elevation point cloud
