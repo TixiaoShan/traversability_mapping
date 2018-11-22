@@ -1,0 +1,32 @@
+<launch>
+    <!--- TF -->
+    <node pkg="tf" type="static_transform_publisher" name="velodyne_base_link" args="0 0 0 0 0 0 velodyne base_link 10" />
+
+    <!--- Lidar Odometry -->    
+
+    <!--- Run Rviz (launch-prefix="nice" for lower cpu usage)-->
+    <node pkg="rviz" type="rviz" name="rviz" output="log" args="-d $(find traversability_mapping)/launch/include/traversability_mapping.rviz" />
+    
+    <!--- Run Traversability Mapping -->    
+    <node pkg="traversability_mapping" type="traversability_filter"  name="traversability_filter"  output="screen">
+      <!-- <remap from="/full_cloud_info" to="/filtered_velodyne_points"/> -->
+      <remap from="/full_cloud_info" to="/laser_cloud_surround"/>
+    </node>
+    <node pkg="traversability_mapping" type="traversability_map"     name="traversability_map"     output="screen"/>
+    <!--<node pkg="traversability_mapping" type="traversability_prm"     name="traversability_prm"     output="screen"/>-->
+    <node pkg="traversability_mapping" type="traversability_path"    name="traversability_path"    output="screen">
+      <param name="angularVelocityMax" value="7.0"/>
+      <param name="angularVelocityRes" value="0.25"/>
+      <param name="angularVelocityMax2" value="0.5"/>
+      <param name="angularVelocityRes2" value="0.25"/>
+      <param name="forwardVelocity" value="0.1"/>
+      <param name="simTime" value="30"/>
+
+      <param name="numInPlaceRotation" value="4"/>
+      <param name="endPointResolution" value="2.0"/>
+    </node>
+
+    <!--- Run Move Base -->
+    <!-- <include file="$(find traversability_mapping)/launch/include/move_base.launch" /> -->
+
+</launch>

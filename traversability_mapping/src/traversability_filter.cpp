@@ -71,18 +71,6 @@ public:
         minHeight = Eigen::MatrixXf::Zero(filterHeightMapArrayLength, filterHeightMapArrayLength);
         maxHeight = Eigen::MatrixXf::Zero(filterHeightMapArrayLength, filterHeightMapArrayLength);
 
-        obstFlag = new bool*[filterHeightMapArrayLength];
-        for (int i = 0; i < filterHeightMapArrayLength; ++i)
-            obstFlag[i] = new bool[filterHeightMapArrayLength];
-
-        minHeight = new float*[filterHeightMapArrayLength];
-        for (int i = 0; i < filterHeightMapArrayLength; ++i)
-            minHeight[i] = new float[filterHeightMapArrayLength];
-
-        maxHeight = new float*[filterHeightMapArrayLength];
-        for (int i = 0; i < filterHeightMapArrayLength; ++i)
-            maxHeight[i] = new float[filterHeightMapArrayLength];
-
         resetParameters();
     }
 
@@ -98,8 +86,6 @@ public:
         initFlag = Eigen::MatrixXi::Zero(filterHeightMapArrayLength, filterHeightMapArrayLength);
         obstFlag = Eigen::MatrixXi::Zero(filterHeightMapArrayLength, filterHeightMapArrayLength);
     }
-        }
-    }
 
     ~TraversabilityFilter(){}
 
@@ -108,11 +94,11 @@ public:
         
         extractRawCloud(laserCloudMsg);
 
-        if (transformCloud() == false) return;
+        // if (transformCloud() == false) return;
 
-        cloud2Matrix();
+        // cloud2Matrix();
 
-        applyFilter();
+        // applyFilter();
 
         extractFilteredCloud();
 
@@ -122,7 +108,7 @@ public:
 
         publishCloud();
 
-        publishLaserScan();
+        // publishLaserScan();
 
         resetParameters();
     }
@@ -131,17 +117,17 @@ public:
         // ROS msg -> PCL cloud
         pcl::fromROSMsg(*laserCloudMsg, *laserCloudIn);
         // extract range info
-        for (int i = 0; i < N_SCAN; ++i){
-            for (int j = 0; j < Horizon_SCAN; ++j){
-                int index = j  + i * Horizon_SCAN;
-                // skip NaN point
-                if (laserCloudIn->points[index].intensity == std::numeric_limits<float>::quiet_NaN()) continue;
-                // save range info
-                rangeMatrix.at<float>(i, j) = laserCloudIn->points[index].intensity;
-                // reset obstacle status to 0 - free 
-                obstacleMatrix.at<int>(i, j) = 0;
-            }
-        }
+        // for (int i = 0; i < N_SCAN; ++i){
+        //     for (int j = 0; j < Horizon_SCAN; ++j){
+        //         int index = j  + i * Horizon_SCAN;
+        //         // skip NaN point
+        //         if (laserCloudIn->points[index].intensity == std::numeric_limits<float>::quiet_NaN()) continue;
+        //         // save range info
+        //         rangeMatrix.at<float>(i, j) = laserCloudIn->points[index].intensity;
+        //         // reset obstacle status to 0 - free 
+        //         obstacleMatrix.at<int>(i, j) = 0;
+        //     }
+        // }
 
         // pcl::PointCloud<PointType>::Ptr laserCloud2(new pcl::PointCloud<PointType>());
 
@@ -238,157 +224,157 @@ public:
         return true;
     }
 
-    void cloud2Matrix(){
+    // void cloud2Matrix(){
 
-        for (int i = 0; i < N_SCAN; ++i){
-            for (int j = 0; j < Horizon_SCAN; ++j){
-                int index = j  + i * Horizon_SCAN;
-                PointType p = laserCloudIn->points[index];
-                laserCloudMatrix[i][j] = p;
-            }
-        }
-    }
+    //     for (int i = 0; i < N_SCAN; ++i){
+    //         for (int j = 0; j < Horizon_SCAN; ++j){
+    //             int index = j  + i * Horizon_SCAN;
+    //             PointType p = laserCloudIn->points[index];
+    //             laserCloudMatrix[i][j] = p;
+    //         }
+    //     }
+    // }
 
-    void applyFilter(){
+    // void applyFilter(){
 
-        if (urbanMapping == true){
-            positiveCurbFilter();
-            negativeCurbFilter();
-        }
+    //     if (urbanMapping == true){
+    //         positiveCurbFilter();
+    //         negativeCurbFilter();
+    //     }
 
-        slopeFilter();
-    }
+    //     slopeFilter();
+    // }
 
-    void positiveCurbFilter(){
-        int rangeCompareNeighborNum = 3;
-        float diff[Horizon_SCAN - 1];
+    // void positiveCurbFilter(){
+    //     int rangeCompareNeighborNum = 3;
+    //     float diff[Horizon_SCAN - 1];
 
-        for (int i = 0; i < scanNumCurbFilter; ++i){
-            // calculate range difference
-            for (int j = 0; j < Horizon_SCAN - 1; ++j)
-                diff[j] = rangeMatrix.at<float>(i, j) - rangeMatrix.at<float>(i, j+1);
+    //     for (int i = 0; i < scanNumCurbFilter; ++i){
+    //         // calculate range difference
+    //         for (int j = 0; j < Horizon_SCAN - 1; ++j)
+    //             diff[j] = rangeMatrix.at<float>(i, j) - rangeMatrix.at<float>(i, j+1);
 
-            for (int j = rangeCompareNeighborNum; j < Horizon_SCAN - rangeCompareNeighborNum; ++j){
+    //         for (int j = rangeCompareNeighborNum; j < Horizon_SCAN - rangeCompareNeighborNum; ++j){
 
-                // Point that has been verified by other filters
-                if (obstacleMatrix.at<int>(i, j) == 1)
-                    continue;
+    //             // Point that has been verified by other filters
+    //             if (obstacleMatrix.at<int>(i, j) == 1)
+    //                 continue;
 
-                bool breakFlag = false;
-                // point is too far away, skip comparison since it can be inaccurate
-                if (rangeMatrix.at<float>(i, j) > sensorRangeLimit)
-                    continue;
-                // make sure all points have valid range info
-                for (int k = -rangeCompareNeighborNum; k <= rangeCompareNeighborNum; ++k)
-                    if (rangeMatrix.at<float>(i, j+k) == -1){
-                        breakFlag = true;
-                        break;
-                    }
-                if (breakFlag == true) continue;
-                // range difference should be monotonically increasing or decresing
-                for (int k = -rangeCompareNeighborNum; k < rangeCompareNeighborNum-1; ++k)
-                    if (diff[j+k] * diff[j+k+1] <= 0){
-                        breakFlag = true;
-                        break;
-                    }
-                if (breakFlag == true) continue;
-                // the range difference between the start and end point of neighbor points is smaller than a threashold, then continue
-                if (abs(rangeMatrix.at<float>(i, j-rangeCompareNeighborNum) - rangeMatrix.at<float>(i, j+rangeCompareNeighborNum)) /rangeMatrix.at<float>(i, j) < 0.03)
-                    continue;
-                // if "continue" is not used at this point, it is very likely to be an obstacle point
-                obstacleMatrix.at<int>(i, j) = 1;
-            }
-        }
-    }
+    //             bool breakFlag = false;
+    //             // point is too far away, skip comparison since it can be inaccurate
+    //             if (rangeMatrix.at<float>(i, j) > sensorRangeLimit)
+    //                 continue;
+    //             // make sure all points have valid range info
+    //             for (int k = -rangeCompareNeighborNum; k <= rangeCompareNeighborNum; ++k)
+    //                 if (rangeMatrix.at<float>(i, j+k) == -1){
+    //                     breakFlag = true;
+    //                     break;
+    //                 }
+    //             if (breakFlag == true) continue;
+    //             // range difference should be monotonically increasing or decresing
+    //             for (int k = -rangeCompareNeighborNum; k < rangeCompareNeighborNum-1; ++k)
+    //                 if (diff[j+k] * diff[j+k+1] <= 0){
+    //                     breakFlag = true;
+    //                     break;
+    //                 }
+    //             if (breakFlag == true) continue;
+    //             // the range difference between the start and end point of neighbor points is smaller than a threashold, then continue
+    //             if (abs(rangeMatrix.at<float>(i, j-rangeCompareNeighborNum) - rangeMatrix.at<float>(i, j+rangeCompareNeighborNum)) /rangeMatrix.at<float>(i, j) < 0.03)
+    //                 continue;
+    //             // if "continue" is not used at this point, it is very likely to be an obstacle point
+    //             obstacleMatrix.at<int>(i, j) = 1;
+    //         }
+    //     }
+    // }
 
-    void negativeCurbFilter(){
-        int rangeCompareNeighborNum = 3;
+    // void negativeCurbFilter(){
+    //     int rangeCompareNeighborNum = 3;
 
-        for (int i = 0; i < scanNumCurbFilter; ++i){
-            for (int j = 0; j < Horizon_SCAN; ++j){
-                // Point that has been verified by other filters
-                if (obstacleMatrix.at<int>(i, j) == 1)
-                    continue;
-                // point without range value cannot be verified
-                if (rangeMatrix.at<float>(i, j) == -1)
-                    continue;
-                // point is too far away, skip comparison since it can be inaccurate
-                if (rangeMatrix.at<float>(i, j) > sensorRangeLimit)
-                    continue;
-                // check neighbors
-                for (int m = -rangeCompareNeighborNum; m <= rangeCompareNeighborNum; ++m){
-                    int k = j + m;
-                    if (k < 0 || k >= Horizon_SCAN)
-                        continue;
-                    if (rangeMatrix.at<float>(i, k) == -1)
-                        continue;
-                    // height diff greater than threashold, might be a negative curb
-                    if (laserCloudMatrix[i][j].z - laserCloudMatrix[i][k].z > 0.1
-                        && pointDistance(laserCloudMatrix[i][j], laserCloudMatrix[i][k]) <= 1.0){
-                        obstacleMatrix.at<int>(i, j) = 1;
-                        break;
-                    }
-                }
-            }
-        }
-    }
+    //     for (int i = 0; i < scanNumCurbFilter; ++i){
+    //         for (int j = 0; j < Horizon_SCAN; ++j){
+    //             // Point that has been verified by other filters
+    //             if (obstacleMatrix.at<int>(i, j) == 1)
+    //                 continue;
+    //             // point without range value cannot be verified
+    //             if (rangeMatrix.at<float>(i, j) == -1)
+    //                 continue;
+    //             // point is too far away, skip comparison since it can be inaccurate
+    //             if (rangeMatrix.at<float>(i, j) > sensorRangeLimit)
+    //                 continue;
+    //             // check neighbors
+    //             for (int m = -rangeCompareNeighborNum; m <= rangeCompareNeighborNum; ++m){
+    //                 int k = j + m;
+    //                 if (k < 0 || k >= Horizon_SCAN)
+    //                     continue;
+    //                 if (rangeMatrix.at<float>(i, k) == -1)
+    //                     continue;
+    //                 // height diff greater than threashold, might be a negative curb
+    //                 if (laserCloudMatrix[i][j].z - laserCloudMatrix[i][k].z > 0.1
+    //                     && pointDistance(laserCloudMatrix[i][j], laserCloudMatrix[i][k]) <= 1.0){
+    //                     obstacleMatrix.at<int>(i, j) = 1;
+    //                     break;
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 
-    void slopeFilter(){
+    // void slopeFilter(){
         
-        for (int i = 0; i < scanNumSlopeFilter; ++i){
-            for (int j = 0; j < Horizon_SCAN; ++j){
-                // Point that has been verified by other filters
-                if (obstacleMatrix.at<int>(i, j) == 1)
-                    continue;
-                // point without range value cannot be verified
-                if (rangeMatrix.at<float>(i, j) == -1 || rangeMatrix.at<float>(i+1, j) == -1)
-                    continue;
-                // point is too far away, skip comparison since it can be inaccurate
-                if (rangeMatrix.at<float>(i, j) > sensorRangeLimit)
-                    continue;
-                // Two range filters here:
-                // 1. if a point's range is larger than scanNumSlopeFilter th ring point's range
-                // 2. if a point's range is larger than the upper point's range
-                // then this point is very likely on obstacle. i.e. a point under the car or on a pole
-                // if (  (rangeMatrix.at<float>(scanNumSlopeFilter, j) != -1 && rangeMatrix.at<float>(i, j) > rangeMatrix.at<float>(scanNumSlopeFilter, j))
-                //     || (rangeMatrix.at<float>(i, j) > rangeMatrix.at<float>(i+1, j)) ){
-                //     obstacleMatrix.at<int>(i, j) = 1;
-                //     continue;
-                // }
-                // Calculate slope angle
-                float diffX = laserCloudMatrix[i+1][j].x - laserCloudMatrix[i][j].x;
-                float diffY = laserCloudMatrix[i+1][j].y - laserCloudMatrix[i][j].y;
-                float diffZ = laserCloudMatrix[i+1][j].z - laserCloudMatrix[i][j].z;
-                float angle = atan2(diffZ, sqrt(diffX*diffX + diffY*diffY)) * 180 / M_PI;
-                // Slope angle is larger than threashold, mark as obstacle point
-                if (angle < -filterAngleLimit || angle > filterAngleLimit){
-                    obstacleMatrix.at<int>(i, j) = 1;
-                    continue;
-                }
-            }
-        }
-    }
+    //     for (int i = 0; i < scanNumSlopeFilter; ++i){
+    //         for (int j = 0; j < Horizon_SCAN; ++j){
+    //             // Point that has been verified by other filters
+    //             if (obstacleMatrix.at<int>(i, j) == 1)
+    //                 continue;
+    //             // point without range value cannot be verified
+    //             if (rangeMatrix.at<float>(i, j) == -1 || rangeMatrix.at<float>(i+1, j) == -1)
+    //                 continue;
+    //             // point is too far away, skip comparison since it can be inaccurate
+    //             if (rangeMatrix.at<float>(i, j) > sensorRangeLimit)
+    //                 continue;
+    //             // Two range filters here:
+    //             // 1. if a point's range is larger than scanNumSlopeFilter th ring point's range
+    //             // 2. if a point's range is larger than the upper point's range
+    //             // then this point is very likely on obstacle. i.e. a point under the car or on a pole
+    //             // if (  (rangeMatrix.at<float>(scanNumSlopeFilter, j) != -1 && rangeMatrix.at<float>(i, j) > rangeMatrix.at<float>(scanNumSlopeFilter, j))
+    //             //     || (rangeMatrix.at<float>(i, j) > rangeMatrix.at<float>(i+1, j)) ){
+    //             //     obstacleMatrix.at<int>(i, j) = 1;
+    //             //     continue;
+    //             // }
+    //             // Calculate slope angle
+    //             float diffX = laserCloudMatrix[i+1][j].x - laserCloudMatrix[i][j].x;
+    //             float diffY = laserCloudMatrix[i+1][j].y - laserCloudMatrix[i][j].y;
+    //             float diffZ = laserCloudMatrix[i+1][j].z - laserCloudMatrix[i][j].z;
+    //             float angle = atan2(diffZ, sqrt(diffX*diffX + diffY*diffY)) * 180 / M_PI;
+    //             // Slope angle is larger than threashold, mark as obstacle point
+    //             if (angle < -filterAngleLimit || angle > filterAngleLimit){
+    //                 obstacleMatrix.at<int>(i, j) = 1;
+    //                 continue;
+    //             }
+    //         }
+    //     }
+    // }
 
     
 
     void extractFilteredCloud(){
-        for (int i = 0; i < scanNumMax; ++i){
-            for (int j = 0; j < Horizon_SCAN; ++j){
-                // invalid points and points too far are skipped
-                if (rangeMatrix.at<float>(i, j) > sensorRangeLimit ||
-                    rangeMatrix.at<float>(i, j) == -1)
-                    continue;
-                // update point intensity (occupancy) into
-                PointType p = laserCloudMatrix[i][j];
-                p.intensity = obstacleMatrix.at<int>(i,j) == 1 ? 100 : 0;
-                // save updated points
-                laserCloudOut->push_back(p);
-                // extract obstacle points and convert them to laser scan
-                if (p.intensity == 100)
-                    laserCloudObstacles->push_back(p);
-            }
-        }
-
+        // for (int i = 0; i < scanNumMax; ++i){
+        //     for (int j = 0; j < Horizon_SCAN; ++j){
+        //         // invalid points and points too far are skipped
+        //         if (rangeMatrix.at<float>(i, j) > sensorRangeLimit ||
+        //             rangeMatrix.at<float>(i, j) == -1)
+        //             continue;
+        //         // update point intensity (occupancy) into
+        //         PointType p = laserCloudMatrix[i][j];
+        //         p.intensity = obstacleMatrix.at<int>(i,j) == 1 ? 100 : 0;
+        //         // save updated points
+        //         laserCloudOut->push_back(p);
+        //         // extract obstacle points and convert them to laser scan
+        //         if (p.intensity == 100)
+        //             laserCloudObstacles->push_back(p);
+        //     }
+        // }
+        *laserCloudOut = *laserCloudIn;
         // Publish laserCloudOut for visualization (before downsample and BGK prediction)
         if (pubCloudVisualHiRes.getNumSubscribers() != 0){
             sensor_msgs::PointCloud2 laserCloudTemp;

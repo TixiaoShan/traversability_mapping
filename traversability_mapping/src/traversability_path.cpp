@@ -34,7 +34,7 @@ public:
 
     bool planningFlag; // set to "true" once goal is received from move_base
 
-    float angularVelocityMax = 7 / 180.0 * M_PI;
+    float angularVelocityMax = 7.0 / 180.0 * M_PI;
     float angularVelocityRes = 0.5 / 180.0 * M_PI;
     float angularVelocityMax2 = 0.5 / 180.0 * M_PI;
     float angularVelocityRes2 = 0.25 / 180.0 * M_PI;

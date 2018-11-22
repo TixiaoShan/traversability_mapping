@@ -95,7 +95,7 @@ extern const float filterAngleLimit = 20; // slope angle threshold
 extern const int filterHeightMapArrayLength = sensorRangeLimit*2 / mapResolution;
 
 // BGK Prediction Params
-extern const bool predictionEnableFlag = false;
+extern const bool predictionEnableFlag = true;
 extern const float predictionKernalSize = 0.2; // predict elevation within x meters
 
 // Occupancy Params
@@ -113,7 +113,7 @@ extern const float visualizationRadius = 50;
 extern const float visualizationFrequency = 2; // n, skip n scans then publish, n=0, visualize at each scan
 
 // Robot Params
-extern const float robotRadius = 0.2;
+extern const float robotRadius = 0.1;
 extern const float sensorHeight = 0.5;
 
 // Traversability Params
@@ -128,7 +128,7 @@ extern const std::vector<int> costHierarchy(tmp, tmp+sizeof(tmp)/sizeof(int));//
 // PRM Planner Settings
 extern const bool planningUnknown = true;
 extern const float costmapInflationRadius = 0.1;
-extern const float neighborSampleRadius  = 0.5;
+extern const float neighborSampleRadius  = 1.0;
 extern const float neighborConnectHeight = 1.0;
 extern const float neighborConnectRadius = 2.0;
 extern const float neighborSearchRadius = localMapLength / 2;
@@ -159,6 +159,7 @@ struct grid_t{
     */
 
 struct mapCell_t{
+    typedef std::shared_ptr<mapCell_t> Ptr;
 
     PointType *xyz; // it's a pointer to the corresponding point in the point cloud of submap
 
@@ -205,6 +206,7 @@ struct mapCell_t{
     It composes the whole map
     */
 struct childMap_t{
+    typedef std::shared_ptr<childMap_t> Ptr;
 
     vector<vector<mapCell_t*> > cellArray;
     int subInd; //sub-map's index in 1d mapArray
@@ -274,6 +276,7 @@ struct state_t{
     int stateId;
     float cost;
     bool validFlag;
+    bool end;
     // # Cost types
     // # 0. obstacle cost
     // # 1. elevation cost
@@ -289,6 +292,7 @@ struct state_t{
     // default initialization
     state_t(){
         parentState = NULL;
+        end = false;
         for (int i = 0; i < NUM_COSTS; ++i){
             costsToRoot[i] = FLT_MAX;
             costsToParent[i] = FLT_MAX;

@@ -93,6 +93,25 @@ public:
         initializeLocalOccupancyMap();
     }
 
+    void reset() {
+        occupancyMap2D  = nav_msgs::OccupancyGrid();
+        occupancyMap2DHeight = elevation_msgs::OccupancyElevation();
+        pubCount = 100;
+        mapArrayCount = 0;
+
+        allocateMemory();
+
+        for (int i = 0; i < mapArray.size(); ++i) {
+            delete mapArray[i];
+        }
+        for (int i = 0; i < observingList1.size(); ++i) {
+            delete observingList1[i];
+        }
+        for (int i = 0; i < observingList2.size(); ++i) {
+            delete observingList2[i];
+        }
+
+    }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////// Register Cloud /////////////////////////////////////////////////////
@@ -109,6 +128,8 @@ public:
         updateElevationMap();
         // publish local occupancy grid map
         publishMap();
+
+        reset();
     }
 
     void updateElevationMap(){

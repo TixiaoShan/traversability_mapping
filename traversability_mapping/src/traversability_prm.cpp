@@ -704,7 +704,7 @@ public:
             markersPath.type = visualization_msgs::Marker::LINE_LIST;
             markersPath.ns = "path";
             markersPath.id = 4;
-            markersPath.scale.x = 0.05;
+            markersPath.scale.x = 0.01;
             markersPath.color.r = 0.3; markersPath.color.g = 0; markersPath.color.b = 1.0;
             markersPath.color.a = 1.0;
 
