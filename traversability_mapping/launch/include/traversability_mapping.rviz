@@ -24,7 +24,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: Filtered Cloud Visual
+    SyncSource: Elevation Cloud
   - Class: rviz/Help
     Name: Help
 Toolbars:
@@ -459,10 +459,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.609797239
+      Pitch: 1.00979686
       Target Frame: base_link
       Value: Orbit (rviz)
-      Yaw: 2.08357358
+      Yaw: 2.01857209
     Saved: ~
 Window Geometry:
   Displays:
