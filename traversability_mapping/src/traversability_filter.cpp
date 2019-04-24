@@ -35,8 +35,7 @@ private:
     float **maxHeight;
     bool **obstFlag;
     bool **initFlag;
-
-
+    // BGK 
     vector<float> xTrainVec;
     vector<float> yTrainVecOccu;
 
