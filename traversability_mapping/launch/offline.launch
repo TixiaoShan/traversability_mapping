@@ -18,8 +18,8 @@
     <!--- Run Traversability Mapping -->    
     <node pkg="traversability_mapping" type="traversability_filter"  name="traversability_filter"  output="screen"/>
     <node pkg="traversability_mapping" type="traversability_map"     name="traversability_map"     output="screen"/>
-    <!--<node pkg="traversability_mapping" type="traversability_prm"     name="traversability_prm"     output="screen"/>-->
-    <node pkg="traversability_mapping" type="traversability_path"    name="traversability_path"    output="screen"/>
+    <node pkg="traversability_mapping" type="traversability_prm"     name="traversability_prm"     output="screen"/>
+    <!-- <node pkg="traversability_mapping" type="traversability_path"    name="traversability_path"    output="screen"/> -->
 
     <!--- Run Move Base -->
     <include file="$(find traversability_mapping)/launch/include/move_base.launch" />
