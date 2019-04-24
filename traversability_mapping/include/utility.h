@@ -44,7 +44,6 @@
 #include <cmath>
 #include <algorithm>
 #include <queue>
-#include <deque>
 #include <iostream>
 #include <fstream>
 #include <ctime>
@@ -71,7 +70,7 @@ typedef struct kdtree kdtree_t;
 typedef struct kdres kdres_t;
 
 // Environment
-extern const bool urbanMapping = true;
+extern const bool urbanMapping = false;
 
 // VLP-16
 extern const int N_SCAN = 16;
@@ -96,7 +95,7 @@ extern const float filterAngleLimit = 20; // slope angle threshold
 extern const int filterHeightMapArrayLength = sensorRangeLimit*2 / mapResolution;
 
 // BGK Prediction Params
-extern const bool predictionEnableFlag = true;
+extern const bool predictionEnableFlag = false;
 extern const float predictionKernalSize = 0.2; // predict elevation within x meters
 
 // Occupancy Params
@@ -122,7 +121,7 @@ extern const int traversabilityObserveTimeTh = 10;
 extern const float traversabilityCalculatingDistance = 8.0;
 
 // Planning Cost Params
-extern const int NUM_COSTS = 6;
+extern const int NUM_COSTS = 3;
 extern const int tmp[] = {2};
 extern const std::vector<int> costHierarchy(tmp, tmp+sizeof(tmp)/sizeof(int));// c++11 initialization: costHierarchy{0, 1, 2}
 
@@ -322,6 +321,11 @@ struct neighbor_t{
             edgeCosts[i] = FLT_MAX;
     }
 };
+
+
+
+
+
 
 
 

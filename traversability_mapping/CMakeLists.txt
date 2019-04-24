@@ -54,7 +54,7 @@ link_directories(
 ###########
 
 # Range Image Filter
-add_executable(traversability_filter src/traversability_filter.cpp src/library/kdtree.c)
+add_executable(traversability_filter src/traversability_filter.cpp)
 target_link_libraries(traversability_filter ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBRARIES})
 
 # Mapping

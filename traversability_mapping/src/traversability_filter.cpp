@@ -35,9 +35,7 @@ private:
     float **maxHeight;
     bool **obstFlag;
     bool **initFlag;
-    // BGK 
-    vector<float> xTrainVec;
-    vector<float> yTrainVecOccu;
+
 
 public:
     TraversabilityFilter():
@@ -48,7 +46,7 @@ public:
         pubCloud = nh.advertise<sensor_msgs::PointCloud2> ("/filtered_pointcloud", 5);
         pubCloudVisualHiRes = nh.advertise<sensor_msgs::PointCloud2> ("/filtered_pointcloud_visual_high_res", 5);
         pubCloudVisualLowRes = nh.advertise<sensor_msgs::PointCloud2> ("/filtered_pointcloud_visual_low_res", 5);
-        pubLaserScan = nh.advertise<sensor_msgs::LaserScan> ("/pointcloud_2_laserscan", 5); 
+        pubLaserScan = nh.advertise<sensor_msgs::LaserScan> ("/pointcloud_2_laserscan", 5);  
 
         allocateMemory();
 
@@ -145,6 +143,81 @@ public:
                 obstacleMatrix.at<int>(i, j) = 0;
             }
         }
+
+        // pcl::PointCloud<PointType>::Ptr laserCloud2(new pcl::PointCloud<PointType>());
+
+        // for (int i = 2; i < N_SCAN-1; ++i){
+        //     for (int j = 5; j < Horizon_SCAN-5; ++j){
+        //         // Training data
+        //         vector<float> xTrainVec; // training data x and y coordinates
+        //         vector<float> yTrainVecRange; // training data elevation
+        //         for (int k = -2; k <= 1; ++k){
+        //             for (int l = -5; l <= 5; ++l){
+        //                 int row = i + k;
+        //                 int col = j + l;
+        //                 if (rangeMatrix.at<float>(row, col) == -1)
+        //                     continue;
+        //                 xTrainVec.push_back(k);
+        //                 xTrainVec.push_back(l);
+        //                 yTrainVecRange.push_back(rangeMatrix.at<float>(row, col));
+        //             }
+                    
+        //         }
+        //         // no training data available, continue
+        //         if (xTrainVec.size() <= 2)
+        //             continue;
+        //         // convert from vector to eigen
+        //         Eigen::MatrixXf xTrain = Eigen::Map<const Eigen::Matrix<float, -1, -1, Eigen::RowMajor>>(xTrainVec.data(), xTrainVec.size()/2, 2);
+        //         Eigen::MatrixXf yTrainRange = Eigen::Map<const Eigen::Matrix<float, -1, -1, Eigen::RowMajor>>(yTrainVecRange.data(), yTrainVecRange.size(), 1);
+        //         // Test data (current grid)
+        //         vector<float> xTestVec;
+        //         xTestVec.push_back(-0.5);
+        //         xTestVec.push_back(0);
+        //         Eigen::MatrixXf xTest = Eigen::Map<const Eigen::Matrix<float, -1, -1, Eigen::RowMajor>>(xTestVec.data(), xTestVec.size()/2, 2);
+        //         // Predict
+        //         Eigen::MatrixXf Ks; // covariance matrix
+        //         covSparse2(xTest, xTrain, Ks); // sparse kernel
+
+        //         Eigen::MatrixXf ybarRange = (Ks * yTrainRange).array();
+        //         Eigen::MatrixXf kbar = Ks.rowwise().sum().array();
+
+        //         // Update Elevation with Prediction
+        //         if (std::isnan(ybarRange(0,0)) || std::isnan(kbar(0,0)))
+        //             continue;
+
+        //         if (kbar(0,0) == 0)
+        //             continue;
+
+        //         float range = ybarRange(0,0) / kbar(0,0);
+
+        //         float verticalAngle = (-15.0 + i * 2.0 - 1.0) / 180.0 * M_PI;
+        //         float horizontalAngle;
+        //         if (j >= 0 && j <= 450)
+        //             horizontalAngle = -j * 0.2 - 90.0;
+        //         else if (j > 450 && j <= 1350)
+        //             horizontalAngle = -j * 0.2 + 270.0;
+        //         else
+        //             horizontalAngle = 270.0 - j * 0.2;
+        //         horizontalAngle = horizontalAngle / 180.0 * M_PI;
+
+        //         PointType p;
+        //         p.x = range * cos(verticalAngle) * sin(horizontalAngle);
+        //         p.y = range * cos(verticalAngle) * cos(horizontalAngle);
+        //         p.z = range * sin(verticalAngle);
+        //         p.intensity = -100;
+
+        //         laserCloudIn->push_back(p);
+
+        //     }
+        // }
+
+        // if (pubCloudVisualHiRes.getNumSubscribers() != 0){
+        //     sensor_msgs::PointCloud2 laserCloudTemp;
+        //     pcl::toROSMsg(*laserCloudIn, laserCloudTemp);
+        //     laserCloudTemp.header.stamp = ros::Time::now();
+        //     laserCloudTemp.header.frame_id = "base_link";
+        //     pubCloudVisualHiRes.publish(laserCloudTemp);
+        // }
     }
 
     bool transformCloud(){
@@ -296,6 +369,8 @@ public:
             }
         }
     }
+
+    
 
     void extractFilteredCloud(){
         for (int i = 0; i < scanNumMax; ++i){
