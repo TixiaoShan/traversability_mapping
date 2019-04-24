@@ -5,7 +5,6 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /PRM Path1/Namespaces1
-        - /Filtered Cloud Visual2
       Splitter Ratio: 0.588888884
     Tree Height: 815
   - Class: rviz/Selection
@@ -28,6 +27,8 @@ Panels:
     SyncSource: Filtered Cloud Visual
   - Class: rviz/Help
     Name: Help
+Toolbars:
+  toolButtonStyle: 2
 Visualization Manager:
   Class: ""
   Displays:
@@ -78,8 +79,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 18.6620941
-        Min Value: -2.08315945
+        Max Value: 16.3144817
+        Min Value: -1.16605139
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -165,7 +166,7 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: false
       Value: false
-    - Alpha: 0.75
+    - Alpha: 1
       Autocompute Intensity Bounds: false
       Autocompute Value Bounds:
         Max Value: 0.115081742
@@ -189,7 +190,7 @@ Visualization Manager:
       Selectable: true
       Size (Pixels): 3
       Size (m): 0.100000001
-      Style: Boxes
+      Style: Flat Squares
       Topic: /elevation_pointcloud
       Unreliable: false
       Use Fixed Frame: true
@@ -270,7 +271,7 @@ Visualization Manager:
       Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 9
+      Max Intensity: 35
       Min Color: 0; 0; 0
       Min Intensity: 0
       Name: Trajectory
@@ -344,7 +345,7 @@ Visualization Manager:
       Color: 0; 0; 0
       Color Transformer: FlatColor
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 0.49984771
@@ -361,7 +362,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -374,7 +375,7 @@ Visualization Manager:
       Color: 255; 0; 255
       Color Transformer: AxisColor
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 31837
@@ -391,7 +392,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -422,36 +423,6 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
-    - Alpha: 1
-      Autocompute Intensity Bounds: false
-      Autocompute Value Bounds:
-        Max Value: 17.7901077
-        Min Value: -5.65548325
-        Value: true
-      Axis: X
-      Channel Name: intensity
-      Class: rviz/PointCloud2
-      Color: 255; 255; 255
-      Color Transformer: Intensity
-      Decay Time: 0
-      Enabled: true
-      Invert Rainbow: false
-      Max Color: 255; 0; 0
-      Max Intensity: 1
-      Min Color: 38; 255; 0
-      Min Intensity: 0
-      Name: Filtered Cloud Visual
-      Position Transformer: XYZ
-      Queue Size: 10
-      Selectable: true
-      Size (Pixels): 8
-      Size (m): 0.100000001
-      Style: Points
-      Topic: /filtered_pointcloud_predict
-      Unreliable: false
-      Use Fixed Frame: true
-      Use rainbow: false
-      Value: true
   Enabled: true
   Global Options:
     Background Color: 0; 0; 0
@@ -473,7 +444,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 22.0851116
+      Distance: 24.7353249
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -488,10 +459,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 1.56979632
+      Pitch: 0.609797239
       Target Frame: base_link
       Value: Orbit (rviz)
-      Yaw: 4.5936079
+      Yaw: 2.08357358
     Saved: ~
 Window Geometry:
   Displays:
