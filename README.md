@@ -18,7 +18,7 @@ You can use the following commands to download and compile the package.
 
 ```
 cd ~/catkin_ws/src
-git clone https://github.com/RobustFieldAutonomyLab/Traversability_Mapping.git
+git clone https://github.com/TixiaoShan/traversability_mapping.git
 cd ..
 catkin_make -j1
 ```
