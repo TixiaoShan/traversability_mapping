@@ -50,7 +50,7 @@ Thank you for citing our paper if you use any of this code:
 ```
 @inproceedings{traversability2018,
   title={Bayesian Generalized Kernel Inference for Terrain Traversability Mapping},
-  author={Tixiao Shan, Kevin Doherty, Jinkun Wang and Brendan Englot},
+  author={Shan, Tixiao and Wang, Jinkun and Englot, Brendan and Doherty, Kevin},
   booktitle={In Proceedings of the 2nd Annual Conference on Robot Learning},
   year={2018}
 }
