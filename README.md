@@ -48,7 +48,7 @@ roslaunch traversability_mapping online.launch
 
 Thank you for citing our paper if you use any of this code: 
 ```
-@inproceedings{traversability2018,
+@inproceedings{bayesian2018shan,
   title={Bayesian Generalized Kernel Inference for Terrain Traversability Mapping},
   author={Shan, Tixiao and Wang, Jinkun and Englot, Brendan and Doherty, Kevin},
   booktitle={In Proceedings of the 2nd Annual Conference on Robot Learning},
